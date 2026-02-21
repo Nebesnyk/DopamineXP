@@ -1,0 +1,161 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+
+<div class="master-layout">
+    <div class="side-panel">
+        <div class="dopaminexp-text @GetTitleTheme()">DOPAMINEXP</div>
+        <NavLink href="/" class="nav-item btn-programming" Match="NavLinkMatch.All">Programming</NavLink>
+        <NavLink href="/gym" class="nav-item btn-gym">Physical Activity</NavLink>
+        <NavLink href="/languages" class="nav-item btn-languages">Languages</NavLink>
+
+    </div>
+    <div class="content-area">
+        <main>
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+
+    private string GetTitleTheme()
+    {
+        string url = NavManager.Uri.ToLower();
+        if (url.Contains("/gym")) return "text-red";
+        if (url.Contains("/languages")) return "text-yellow";
+        return "text-blue";
+    }
+
+}
+
+<style>
+    .master-layout {
+        display: flex;
+    }
+
+    .content-area {
+        flex: 1;
+        display: flex; 
+    }
+
+    main {
+        flex: 1;
+        display: flex;
+    }
+
+    .side-panel {
+        background: radial-gradient(circle at top left, #454545, #5c5c5c);
+        padding: 20px;
+        height: 100vh;
+        width: 230px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .dopaminexp-text {
+        font-weight: 900;
+        font-size: 20px;
+        text-shadow: 0 0 10px rgb(255, 255, 255);
+        padding-bottom: 50px;
+    }
+
+    .text-blue { animation: pulse-blue 3s infinite; }
+    .text-red { animation: pulse-red 3s infinite; }
+    .text-yellow { animation: pulse-yellow 3s infinite; }
+    
+    @@keyframes pulse-blue {
+        0% {color: #006bb3; text-shadow: 0 0 5px rgba(0, 157, 255, 0.4);}
+        50% {color: #009dff; text-shadow: 0 0 15px rgba(0, 157, 255, 0.8), 0 0 30px rgba(0, 157, 255, 0.5);}
+        100% {color: #006bb3; text-shadow: 0 0 5px rgba(0, 157, 255, 0.4);}
+    }
+    
+    @@keyframes pulse-red {
+        0% {color: #990000; text-shadow: 0 0 5px rgba(255, 59, 59, 0.4);}
+        50% {color: #ff3b3b; text-shadow: 0 0 15px rgba(255, 59, 59, 0.8), 0 0 30px rgba(255, 59, 59, 0.5);}
+        100% {color: #990000; text-shadow: 0 0 5px rgba(255, 59, 59, 0.4);}
+    }
+    
+    @@keyframes pulse-yellow {
+        0% {color: #997a00; text-shadow: 0 0 5px rgba(255, 204, 0, 0.4);}
+        50% {color: #ffcc00; text-shadow: 0 0 15px rgba(255, 204, 0, 0.8), 0 0 30px rgba(255, 204, 0, 0.5);}
+        100% {color: #997a00; text-shadow: 0 0 5px rgba(255, 204, 0, 0.4);}
+    }
+    
+    .nav-item {
+        text-decoration: none;
+        background-color: #1a1d20;
+        color: #ffffff;
+        padding: 12px 20px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        width: 100%;
+        text-align: center;
+        font-weight: bold;
+        box-sizing: border-box;
+        
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .nav-item:hover {
+        background-color: #262a2e;
+        transform: translateX(4px);
+    }
+
+    a.nav-item:active {
+        transform: scale(0.95) !important; 
+        background-color: #262a2e !important; 
+        transition: transform 0.1s !important; 
+    }
+    
+    .btn-programming:hover {
+        background-color: #262a2e;
+        color: #009dff;
+    }
+    
+    .btn-programming.active {
+        background-color: rgba(0, 157, 255, 0.1);
+        color: #009dff;
+        border-left: 4px solid #009dff;
+        box-shadow: inset 10px 0 15px -10px rgba(0, 157, 255, 0.4);
+    }
+
+    .btn-programming:active { color: #009dff !important; }
+
+  
+    .btn-gym:hover {
+        background-color: #262a2e;
+        color: #ff3b3b;
+    }
+    .btn-gym.active {
+        background-color: rgba(255, 59, 59, 0.1); 
+        color: #ff3b3b;
+        border-left: 4px solid #ff3b3b;
+        box-shadow: inset 10px 0 15px -10px rgba(255, 59, 59, 0.4);
+    }
+
+    .btn-gym:active { color: #ff3b3b !important;}
+    
+    .btn-languages:hover {
+        background-color: #262a2e;
+        color: #ffcc00;
+    }
+    .btn-languages.active {
+        background-color: rgba(255, 204, 0, 0.1); 
+        color: #ffcc00;
+        border-left: 4px solid #ffcc00;
+        box-shadow: inset 10px 0px 15px -10px rgba(255, 204, 0, 0.4);
+    }
+
+    .btn-languages:active { color: #ffcc00 !important;}
+    
+    .nav-item:focus,
+    .nav-item:active,
+    .nav-item:focus-visible {
+        box-shadow: none !important;
+    }
+    
+</style>
+
