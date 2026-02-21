@@ -156,6 +156,24 @@
     .nav-item:focus-visible {
         box-shadow: none !important;
     }
-    
+
+    @@media (max-width: 768px) {
+    .master-layout {
+        flex-direction: column !important;
+    }
+    .side-panel {
+        width: 100% !important;
+        height: auto !important;
+        position: relative !important;
+        padding: 15px !important;
+    }
+    .dopaminexp-text {
+        padding-top: 20px; !important;
+        padding-bottom: 20px !important; 
+    }
+    .content-area {
+        width: 100% !important;
+    }
+    }
 </style>
 

@@ -20,6 +20,15 @@
         </div>
     </div>
     
+    <div class="points-streak">
+        <span class="points-text">@Points @TypeOfPoints()</span>
+        <span class="streak-text">Streak: @Streak days</span>
+    </div>
+    
+    <div class="shop-container">
+        
+    </div>
+    
     
 </div>
 
@@ -44,6 +53,9 @@
     public int Level { get; set; }
     
     [Parameter]
+    public int Points { get; set; }
+    
+    [Parameter]
     public int Streak { get; set; }
     
     ////////////////////////////////////////////////
@@ -57,18 +69,21 @@
             CurrentXp = Brain.ProgrammingXp;
             Level = Brain.ProgrammingLevel;
             Streak = Brain.ProgrammingStreak;
+            Points = Brain.ProgrammingPoints;
         }
         else if (SkillName == "Physical Activity")
         {
             CurrentXp = Brain.GymXp;
             Level = Brain.GymLevel;
             Streak = Brain.GymStreak;
+            Points = Brain.GymPoints;
         }
         else if (SkillName == "Languages")
         {
             CurrentXp = Brain.LanguagesXp;
             Level = Brain.LanguagesLevel;
-            Streak = Brain.LanguagesLevel;
+            Streak = Brain.LanguagesStreak;
+            Points = Brain.LanguagesPoints;
         }
 
         _threshold = (int)Math.Pow(1.2, Level) * 100;
@@ -81,18 +96,21 @@
             Brain.ProgrammingXp = CurrentXp;
             Brain.ProgrammingLevel = Level;
             Brain.ProgrammingStreak = Streak;
+            Brain.ProgrammingPoints = Points;
         }
         else if (SkillName == "Physical Activity")
         {
             Brain.GymXp = CurrentXp;
             Brain.GymLevel = Level;
             Brain.GymStreak = Streak;
+            Brain.GymPoints = Points;
         }
         else if (SkillName == "Languages")
         {
             Brain.LanguagesXp = CurrentXp;
             Brain.LanguagesLevel = Level;
             Brain.LanguagesStreak = Streak;
+            Brain.LanguagesPoints = Points;
         }
         
         Brain.SaveToFile();
@@ -107,6 +125,22 @@
             return;
         CurrentXp += (int)(2 * _minutesSpent.Value * (Streak * 0.1 + 1));
         _minutesSpent = null;
+
+        if (SkillName == "Programming")
+        {
+            Streak = Brain.CalculateNewStreak(Streak, Brain.LastProgrammingLog);
+            Brain.LastProgrammingLog = DateTime.Today;
+        }
+        else if (SkillName == "Physical Activity")
+        {
+            Streak = Brain.CalculateNewStreak(Streak, Brain.LastGymLog);
+            Brain.LastGymLog = DateTime.Today;
+        }
+        else if (SkillName == "Languages")
+        {
+            Streak = Brain.CalculateNewStreak(Streak, Brain.LastLanguagesLog);
+            Brain.LastLanguagesLog = DateTime.Today;
+        }
         
         SaveToBrain();
     }
@@ -118,11 +152,23 @@
         return "";
     }
 
+    private string TypeOfPoints()
+    {
+        if (SkillName == "Programming")
+            return "PPs";
+        else if (SkillName == "Physical Activity")
+            return "GPs";
+        else if (SkillName == "Languages")
+            return "LPs";
+        return "ERROR";
+    }
+
     private void LevelUp()
     {
         if (CurrentXp < _threshold)
             return;
         CurrentXp -= _threshold;
+        Points += Level;
         Level++;
         _threshold = (int)Math.Pow(1.2, Level) * 100;
         
@@ -322,4 +368,45 @@
     .level-up-btn.theme-blue { color: #009dff; }
     .level-up-btn.theme-red { color: #ff3b3b; }
     .level-up-btn.theme-yellow { color: #ffcc00; }
+    
+    .points-streak {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-top: 20px;
+
+        background: radial-gradient(circle at top left, #454545, #5c5c5c);
+        padding: 20px;
+        border-radius: 8px;
+
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 1px;
+    }
+
+    @@media (max-width: 768px) {
+    .tracker-container {
+        padding: 15px !important; 
+    }
+
+    .level-input-buttons {
+        flex-direction: column !important; 
+        align-items: center !important;
+    }
+
+    .xp-input {
+        width: 100% !important; 
+        margin-bottom: 10px;
+    }
+
+    .level-up-btn {
+        margin-left: 0 !important; 
+        text-align: center;
+    }
+    
+    .points-streak {
+        margin-bottom: 100px;
+    }
+    }
 </style>
