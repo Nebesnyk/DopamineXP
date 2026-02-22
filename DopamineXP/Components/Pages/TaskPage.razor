@@ -51,7 +51,8 @@
                     
                     @if (activeTask.LastLogged == DateTime.Today && !string.IsNullOrEmpty(activeTask.DailyStreakMessage))
                     {
-                        <div style="color: #00ff66; text-align: center; margin-top: 15px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 255, 102, 0.5); animation: fade-in 0.5s;">
+                        string colorClass = activeTask.DailyStreakMessage.Contains("FREEZE") ? "streak-msg-freeze" : "streak-msg-hit";
+                        <div class="streak-msg-base @colorClass" style="color: #00ff66; text-align: center; margin-top: 15px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 255, 102, 0.5); animation: fade-in 0.5s;">
                             @activeTask.DailyStreakMessage
                         </div>
                     }
@@ -625,6 +626,24 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+        }
+
+        .streak-msg-base {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            animation: fade-in 0.5s;
+        }
+
+        .streak-msg-hit {
+            color: #00ff66;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+
+        .streak-msg-freeze {
+            color: #009dff;
+            text-shadow: 0 0 10px rgba(0, 157, 255, 0.5);
         }
     }
 </style>
