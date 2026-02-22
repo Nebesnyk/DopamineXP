@@ -35,6 +35,8 @@
         Brain.AddTask(
             new DopamineTask { Name = Name, HexColor = HexColor });
 
+        Brain.SaveToFile();
+        
         Name = "";
     }
 }
@@ -166,5 +168,34 @@
         100% { background-position: 300% 50%; }
     }
     /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
+    
+    @@media (max-width: 768px) {
+        .tracker-container {
+            padding: 15px; 
+        }
+
+        .title-field {
+            font-size: 20px; 
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .inputs {
+            flex-direction: column; 
+            align-items: center;
+            gap: 20px;
+        }
+
+        .task-input, .color-input {
+            width: 100%; 
+            max-width: 250px; 
+        }
+
+        .create-task-btn {
+            width: 100%;
+            max-width: 280px; 
+            margin-top: 30px;
+        }
+    }
     
 </style>

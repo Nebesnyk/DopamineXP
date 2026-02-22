@@ -36,6 +36,8 @@
 
     protected override void OnInitialized()
     {
+        Brain.LoadFromFile();
+        
         NavManager.LocationChanged += (s, e) =>
         {
             UpdateState();
@@ -78,6 +80,7 @@
     .master-layout {
         display: flex;
         min-height: 100vh;
+        width: 100%;
     }
 
     .content-area {
@@ -227,30 +230,40 @@
         100% { background-position: 300% 50%; }
     }
     /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
-    
+
     @@media (max-width: 768px) {
     .master-layout {
         flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100vw !important; 
+        overflow-x: hidden !important; 
     }
+
     .side-panel {
         width: 100% !important;
         height: auto !important;
         position: relative !important;
         padding: 15px !important;
-    }
-    .dopaminexp-text {
-        padding-top: 20px; !important;
-        padding-bottom: 20px !important; 
-    }
-    .content-area {
-        width: 100% !important;
-    }
+        box-sizing: border-box !important;
     }
 
-    .nav-item:focus,
-    .nav-item:focus-visible {
-        outline: none !important;
-        box-shadow: none !important; 
+    .content-area {
+        width: 100% !important;
+        max-width: 100vw !important; 
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    main {
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+    }
+
+    .dopaminexp-text {
+        padding-top: 20px !important;
+        padding-bottom: 20px !important;
+    }
     }
 </style>
 

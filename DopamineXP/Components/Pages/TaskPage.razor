@@ -1,6 +1,7 @@
 ﻿@page "/task/{TaskName}"
 @using DopamineXP.Models
 @inject Services.TrackerBrain Brain
+@inject NavigationManager NavManager
 
 <div class="tracker-container" style="@($"--theme-color: {activeTask?.HexColor ?? "#ffffff"};")">
     
@@ -14,7 +15,21 @@
     {
         <div class="main-scene">
             <div class="task-header">
-                <h1 class="task-title">@activeTask.Name.ToUpper()</h1>
+                @if (!_isEditing)
+                {
+                    <h1 class="task-title">@activeTask.Name.ToUpper()</h1>
+                    <div class="edit-btn" @onclick="ToggleEdit">EDIT SETTINGS</div>
+                }
+                else
+                {
+                    <div class="edit-mode-container">
+                        <input type="text" class="xp-input" style="width: 250px; text-align: left;" @bind="_editName" />
+                        <input type="color" class="color-input" style="width: 60px; height: 45px; cursor: pointer;" @bind="_editColor" />
+                        
+                        <div class="save-btn" @onclick="SaveChanges">SAVE</div>
+                        <div class="cancel-btn" @onclick="ToggleEdit">CANCEL</div>
+                    </div>
+                }
             </div>
             
             <div class="task-content">
@@ -38,6 +53,10 @@
                 <div class="points-streak">
                     <span class="points-text">@activeTask.Points Points</span>
                     <span class="streak-text">Streak: @activeTask.Streak days</span>
+                </div>
+                
+                <div class="delete-container">
+                    <div class="delete-btn" @onclick="DeleteTask">DELETE TASK</div>
                 </div>
             </div>
         </div>
@@ -71,6 +90,7 @@
         _minutesSpent = null;
         
         Brain.OnChange?.Invoke(); 
+        Brain.SaveToFile();
     }
 
     private string CanLevelUp()
@@ -90,6 +110,54 @@
         _threshold = Math.Pow(1.2, activeTask.Level) * 100;
         
         Brain.OnChange?.Invoke();
+        Brain.SaveToFile();
+    }
+    
+    private void DeleteTask()
+    {
+        if (activeTask != null)
+        {
+            Brain.CustomTasks.Remove(activeTask);
+            
+            Brain.OnChange?.Invoke(); 
+            Brain.SaveToFile();
+            
+            NavManager.NavigateTo("/"); 
+        }
+    }
+    
+    private bool _isEditing = false;
+    private string _editName = "";
+    private string _editColor = "";
+
+    private void ToggleEdit()
+    {
+        if (activeTask != null)
+        {
+            _editName = activeTask.Name;
+            _editColor = activeTask.HexColor;
+            _isEditing = !_isEditing;
+        }
+    }
+
+    private void SaveChanges()
+    {
+        if (activeTask != null && !string.IsNullOrWhiteSpace(_editName))
+        {
+            bool nameChanged = activeTask.Name != _editName;
+            
+            activeTask.Name = _editName;
+            activeTask.HexColor = _editColor;
+            _isEditing = false;
+            
+            Brain.OnChange?.Invoke(); 
+            Brain.SaveToFile();
+
+            if (nameChanged)
+            {
+                NavManager.NavigateTo($"/task/{System.Net.WebUtility.UrlEncode(activeTask.Name)}");
+            }
+        }
     }
 }
 
@@ -128,6 +196,10 @@
         text-align: center;
         margin: 0;
         text-shadow: 0 0 15px var(--theme-color);
+
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
     }
 
     .task-content {
@@ -250,5 +322,111 @@
         font-size: 18px;
         font-weight: 700;
         color: #ffffff;
+    }
+
+    .delete-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .delete-btn {
+        background-color: transparent;
+        color: #ff3b3b;
+        border: 2px solid #ff3b3b;
+        border-radius: 8px;
+        padding: 10px 30px;
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .delete-btn:hover {
+        background-color: rgba(255, 59, 59, 0.1);
+        box-shadow: 0 0 15px rgba(255, 59, 59, 0.4), inset 0 0 10px rgba(255, 59, 59, 0.2);
+    }
+
+    .delete-btn:active {
+        transform: scale(0.95);
+    }
+
+    .edit-btn {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        margin-top: 10px;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .edit-btn:hover {
+        color: var(--theme-color);
+    }
+
+    .edit-mode-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .save-btn {
+        background-color: #2e2e2e;
+        color: #00ff66;
+        border: 2px solid #00ff66;
+        border-radius: 8px;
+        padding: 8px 15px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .save-btn:hover {
+        background-color: rgba(0, 255, 102, 0.1);
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+    }
+
+    .cancel-btn {
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .cancel-btn:hover {
+        color: #ffffff;
+    }
+
+    @@media (max-width: 768px) {
+        .tracker-container { padding: 15px !important; }
+
+        .task-header, .task-content { padding: 15px !important; }
+
+        .level-input-buttons {
+            flex-direction: column !important;
+            align-items: center !important;
+        }
+
+        .xp-input {
+            width: 100% !important;
+            margin-bottom: 10px;
+        }
+
+        .level-up-btn {
+            margin-left: 0 !important;
+            width: 100%;
+            text-align: center;
+        }
+
+        .points-streak {
+            flex-direction: column;
+            text-align: center;
+            gap: 10px;
+        }
     }
 </style>
