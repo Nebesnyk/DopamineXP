@@ -1,0 +1,254 @@
+﻿@page "/task/{TaskName}"
+@using DopamineXP.Models
+@inject Services.TrackerBrain Brain
+
+<div class="tracker-container" style="@($"--theme-color: {activeTask?.HexColor ?? "#ffffff"};")">
+    
+    @if (activeTask == null)
+    {
+        <div class="main-scene">
+            <h1 style="color: white; text-align: center; margin-top: 50px;">Task Not Found!</h1>
+        </div>
+    }
+    else
+    {
+        <div class="main-scene">
+            <div class="task-header">
+                <h1 class="task-title">@activeTask.Name.ToUpper()</h1>
+            </div>
+            
+            <div class="task-content">
+                <div class="level-container">
+                    <div class="level-xp-text">
+                        <span class="level-text">Level @activeTask.Level</span>
+                        <span class="xp-text">@activeTask.XP/@_threshold XP</span>
+                    </div>
+                    
+                    <div class="progress-track-bar">
+                        <div class="progress-fill-bar" style="width: @(activeTask.XP < _threshold ? (activeTask.XP / _threshold * 100) : 100)%"></div>
+                    </div>
+                    
+                    <div class="level-input-buttons">
+                        <input type="number" class="xp-input" placeholder="Minutes" min="0" @bind="_minutesSpent"/>
+                        <div class="append-xp-btn" @onclick="AppendXp">APPEND</div>
+                        <div class="level-up-btn @CanLevelUp()" @onclick="LevelUp">LEVEL UP!</div>
+                    </div>
+                </div>
+                
+                <div class="points-streak">
+                    <span class="points-text">@activeTask.Points Points</span>
+                    <span class="streak-text">Streak: @activeTask.Streak days</span>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string TaskName { get; set; } = "";
+
+    private DopamineTask? activeTask;
+    private int? _minutesSpent;
+    private double _threshold = 100;
+
+    protected override void OnParametersSet()
+    {
+        string decodedName = System.Net.WebUtility.UrlDecode(TaskName);
+        activeTask = Brain.CustomTasks.FirstOrDefault(t => t.Name.Equals(decodedName, StringComparison.OrdinalIgnoreCase));
+        
+        if (activeTask != null)
+        {
+            _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 100);
+        }
+    }
+
+    private void AppendXp()
+    {
+        if (_minutesSpent == null || activeTask == null) return;
+        
+        activeTask.XP += (int)(2 * _minutesSpent.Value * (activeTask.Streak * 0.1 + 1));
+        _minutesSpent = null;
+        
+        Brain.OnChange?.Invoke(); 
+    }
+
+    private string CanLevelUp()
+    {
+        if (activeTask != null && activeTask.XP >= _threshold)
+            return "is-ready";
+        return "";
+    }
+
+    private void LevelUp()
+    {
+        if (activeTask == null || activeTask.XP < _threshold) return;
+        
+        activeTask.XP -= _threshold;
+        activeTask.Points += activeTask.Level;
+        activeTask.Level++;
+        _threshold = Math.Pow(1.2, activeTask.Level) * 100;
+        
+        Brain.OnChange?.Invoke();
+    }
+}
+
+<style>
+    .tracker-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 40px;
+        box-sizing: border-box;
+        min-height: 100vh;
+        background: radial-gradient(circle at top left, var(--theme-color), #111);
+    }
+    
+    .main-scene {
+        background: rgba(30, 30, 30, 0.8);
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        border-radius: 15px;
+        border: 2px solid var(--theme-color);
+        box-shadow: 0 0 20px var(--theme-color);
+    }
+    
+    .task-header {
+        padding: 30px;
+        border-bottom: 2px solid var(--theme-color);
+    }
+    
+    .task-title {
+        color: var(--theme-color);
+        font-size: 40px;
+        font-weight: 900;
+        text-align: center;
+        margin: 0;
+        text-shadow: 0 0 15px var(--theme-color);
+    }
+
+    .task-content {
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .level-container {
+        background: radial-gradient(circle at top left, #454545, #5c5c5c);
+        padding: 20px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .level-xp-text {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline; 
+        padding-bottom: 12px;
+        text-transform: uppercase; 
+    }
+
+    .level-text {
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--theme-color);
+        text-shadow: 0 0 15px var(--theme-color);
+    }
+
+    .xp-text {
+        font-size: 18px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.6); 
+        letter-spacing: 1px;
+    }
+    
+    .progress-track-bar {
+        background-color: #2e2e2e;
+        height: 40px;
+        width: 100%;
+        border-radius: 15px;
+        box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .progress-fill-bar {
+        height: 40px;
+        border-radius: 15px;
+        transition: width 0.4s ease-out;
+        background: linear-gradient(to right, #222, var(--theme-color));
+        box-shadow: 0 0 10px var(--theme-color);
+    }
+    
+    .level-input-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .xp-input {
+        background-color: #2e2e2e;
+        color: white;
+        border: 2px solid #5c5c5c;
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-size: 18px;
+        font-weight: 700;
+        width: 130px;
+        text-align: center;
+        outline: none;
+        box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .append-xp-btn {
+        background-color: #3a3f44;
+        color: white;
+        border: 2px solid #5c5c5c;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .level-up-btn {
+        margin-left: auto; 
+        background-color: transparent;
+        color: #444444;
+        border: 2px solid #444444;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 18px;
+        font-weight: 900;
+        cursor: not-allowed; 
+    }
+    
+    .level-up-btn.is-ready {
+        cursor: pointer;
+        color: var(--theme-color);
+        border-color: currentColor;
+        animation: pulse-level-up 2s infinite;
+    }
+    
+    @@keyframes pulse-level-up {
+        0% { box-shadow: 0 0 5px currentColor, inset 0 0 5px currentColor; }
+        50% { box-shadow: 0 0 20px currentColor, inset 0 0 10px currentColor; }
+        100% { box-shadow: 0 0 5px currentColor, inset 0 0 5px currentColor; }
+    }
+    
+    .points-streak {
+        display: flex;
+        justify-content: space-between;
+        background: radial-gradient(circle at top left, #454545, #5c5c5c);
+        padding: 20px;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+</style>

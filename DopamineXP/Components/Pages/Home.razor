@@ -1,96 +1,170 @@
-﻿@page "/Temporary"
+﻿@page "/"
+@using DopamineXP.Models
+@inject Services.TrackerBrain Brain
 
-<div class="terminal-window">
-    <h2 class="title-text">DOPAMINEXP // SURVIVAL TERMINAL</h2>
-
-    <div class="xp-container">
-        <div class="xp-track">
-            <div class="xp-fill" style="width: @(_currentProgress / _threshold * 100)%;"></div>
+<div class="tracker-container">
+    <div class="main-scene">
+        <div class="title-field">WELCOME TO THE TASK MANAGER</div>
+        
+        <div class="inputs">
+            <div class="input-container">
+                <span style="font-size: 20px; margin-bottom: 5px;">Write a task's name</span>
+                <input type="text" class="task-input" @bind="Name"/>
+            </div>
+            
+            <div class="input-container">
+                <span style="font-size: 20px; margin-bottom: 5px;">Choose the task's color</span>
+                <input type="color" class="color-input" @bind="HexColor"/>
+            </div>
         </div>
         
-        <button class="btn-log" @onclick="AddXp">LOG STUDY TIME (+10 XP)</button>
+        <div class="create-task-btn" @onclick="CreateTask">CREATE THE TASK!</div>
     </div>
 </div>
 
 @code {
-    // Pure C# Logic
-    private double  _currentProgress = 0;
-    private double _threshold = 100;
 
-    private void AddXp()
+    private string Name = "";
+    private string HexColor = "#000000";
+
+    private void CreateTask()
     {
-        _currentProgress += 10;
-        if (_currentProgress >= _threshold) _threshold *= 2;
+        if (string.IsNullOrWhiteSpace(Name))
+            return;
+        
+        Brain.AddTask(
+            new DopamineTask { Name = Name, HexColor = HexColor });
+
+        Name = "";
     }
 }
 
 <style>
-    /* WASTELAND TERMINAL CSS */
-    body {
-        background-color: #050505; /* Black background behind the app */
-    }
+    .tracker-container {
+        background: radial-gradient(circle at top left,
+        red, red, orange, yellow, green, cyan, blue, purple);
 
-    .terminal-window {
-        background-color: #0a0e0a; /* Dark tinted green/black */
+        display: flex;
+        flex-direction: column;
+
+        flex: 1;
         padding: 40px;
-        border: 2px solid #1a3a1a;
-        border-radius: 8px;
-        font-family: 'Courier New', Courier, monospace;
-        color: #4af626; /* Phosphor green */
-        box-shadow: inset 0 0 20px rgba(74, 246, 38, 0.1);
-    }
-
-    .title-text {
-        color: #4af626;
-        margin-bottom: 30px;
-        letter-spacing: 3px;
-        text-shadow: 0 0 10px rgba(74, 246, 38, 0.6); /* Glowing text */
-    }
-
-    .xp-track {
-        background-color: #051205;
-        border: 1px solid #1a3a1a;
-        border-radius: 2px;
-        height: 35px;
-        width: 100%;
-        margin-bottom: 25px;
-    }
-
-    .xp-fill {
-        background-color: #4af626;
-        height: 100%;
-        /* A faint repeating stripe pattern to make it look like retro tech */
-        background-image: repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 10px,
-            rgba(0,0,0,0.2) 10px,
-            rgba(0,0,0,0.2) 20px
-        );
-        transition: width 0.3s ease-out; 
-        box-shadow: 0 0 15px rgba(74, 246, 38, 0.5); /* Glowing bar */
-    }
-
-    .btn-log {
-        background-color: #051205;
-        color: #4af626;
-        padding: 12px 24px;
-        border: 2px solid #4af626;
-        font-size: 16px;
-        font-family: 'Courier New', Courier, monospace;
-        font-weight: bold;
-        cursor: pointer;
-        text-shadow: 0 0 5px rgba(74, 246, 38, 0.5);
-        transition: all 0.1s;
-    }
-
-    .btn-log:hover {
-        background-color: #4af626;
-        color: #050505;
-        box-shadow: 0 0 15px rgba(74, 246, 38, 0.8);
+        color: white;
+        min-height: 100vh;
+        
     }
     
-    .btn-log:active {
-        transform: scale(0.98); /* Satisfying click feeling */
+    .main-scene {
+        background: radial-gradient(circle at top left, #454545, #5c5c5c);
+        width: 100%;
+        height: 100%;
+        
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        border-radius: 15px;
+        
     }
+    
+    .title-field {
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    
+    .inputs {
+        display: flex;
+        padding: 20px;
+        justify-content: space-around;
+    }
+    
+    .input-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    
+    .task-input {
+        width: 200px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    .color-input {
+        width: 200px;
+        height: 50px;
+    }
+
+    /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
+    .create-task-btn {
+        text-decoration: none;
+        position: relative;
+        padding: 14px 40px;
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        background: #1e1e1e;
+        border: none;
+        border-radius: 14px;
+        cursor: pointer;
+        overflow: hidden;
+        z-index: 1;
+        transition: transform 0.2s ease, box-shadow 0.3s ease;
+        
+        text-align: center;
+        margin: 50px auto 0 auto;
+        width: 300px;
+    }
+
+    .create-task-btn::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: inherit;
+        background: linear-gradient(
+            90deg,
+            red,
+            orange,
+            yellow,
+            lime,
+            cyan,
+            blue,
+            violet,
+            red
+        );
+        background-size: 300% 100%;
+        animation: rainbowMove 4s linear infinite;
+        z-index: -2;
+    }
+
+    .create-task-btn::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        background: #1e1e1e;
+        border-radius: inherit;
+        z-index: -1;
+    }
+
+    .create-task-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0 20px rgba(255, 0, 255, 0.4),
+        0 0 40px rgba(0, 255, 255, 0.3);
+    }
+
+    .create-task-btn:active {
+        transform: scale(0.96);
+    }
+
+    @@keyframes rainbowMove {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 300% 50%; }
+    }
+    /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
+    
 </style>

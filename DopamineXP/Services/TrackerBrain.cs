@@ -1,4 +1,5 @@
 ﻿using DopamineXP.Components.Pages;
+using DopamineXP.Models;
 
 namespace DopamineXP.Services;
 using System.Text.Json;
@@ -24,6 +25,16 @@ public class TrackerBrain
     public int LanguagesPoints { get; set; } = 0;
     public DateTime LastLanguagesLog { get; set; } = DateTime.MinValue;
 
+    public List<DopamineTask> CustomTasks { get; set; } = new();
+    public Action? OnChange;
+    
+    public void AddTask(DopamineTask task)
+    {
+        CustomTasks.Add(task);
+        OnChange?.Invoke();
+    }
+    
+    
     private string appFile;
 
     public TrackerBrain()

@@ -1,12 +1,27 @@
-﻿@inherits LayoutComponentBase
+﻿@using DopamineXP.Models
+@inherits LayoutComponentBase
 @inject NavigationManager NavManager
+@inject Services.TrackerBrain Brain
 
 <div class="master-layout">
     <div class="side-panel">
-        <div class="dopaminexp-text @GetTitleTheme()">DOPAMINEXP</div>
-        <NavLink href="/" class="nav-item btn-programming" Match="NavLinkMatch.All">Programming</NavLink>
-        <NavLink href="/gym" class="nav-item btn-gym">Physical Activity</NavLink>
-        <NavLink href="/languages" class="nav-item btn-languages">Languages</NavLink>
+        <div class="dopaminexp-text text-custom" 
+             style="@(activeTask != null ? $"--task-color: {activeTask.HexColor}; --task-color-dark: {activeTask.GetDarkerHex(0.6)}; --task-shadow-light: {activeTask.GetRgba(0.4)}; --task-shadow-strong: {activeTask.GetRgba(0.8)}; --task-shadow-med: {activeTask.GetRgba(0.5)};" : "")">
+            DOPAMINEXP
+        </div>
+        
+        <NavLink href="/" class="rainbow-btn">
+            <span>ADD TASK</span>
+        </NavLink>
+        
+        @foreach (DopamineTask task in Brain.CustomTasks)
+        {
+            <NavLink href="@($"/task/{task.Name}")" 
+                     class="nav-item custom-task" 
+                     style="@($"--task-color: {task.HexColor}; --task-bg-active: {task.GetRgba(0.1)}; --task-shadow: {task.GetRgba(0.4)};")">
+                @task.Name
+            </NavLink>
+        }
 
     </div>
     <div class="content-area">
@@ -17,20 +32,52 @@
 </div>
 
 @code {
+    private DopamineTask? activeTask;
+
+    protected override void OnInitialized()
+    {
+        NavManager.LocationChanged += (s, e) =>
+        {
+            UpdateState();
+            StateHasChanged();
+        };
+        UpdateState();
+        
+        Brain.OnChange += StateHasChanged;
+    }
+    
+
+    private void UpdateState()
+    {
+        string url = NavManager.Uri.ToLower();
+
+        if (url.Contains("/task/"))
+        {
+            string taskName = NavManager.Uri.Split("/task/").Last();
+            taskName = System.Net.WebUtility.UrlDecode(taskName);
+            activeTask = Brain.CustomTasks.FirstOrDefault(t => t.Name == taskName);
+        }
+        else
+            activeTask = null;
+    }
 
     private string GetTitleTheme()
     {
-        string url = NavManager.Uri.ToLower();
-        if (url.Contains("/gym")) return "text-red";
-        if (url.Contains("/languages")) return "text-yellow";
-        return "text-blue";
+        return activeTask != null ? "text-custom" : "text-blue";
     }
 
 }
 
 <style>
+    :root {
+        --task-color: #ffffff;
+        --task-bg-active: rgba(255, 255, 255, 0.1);
+        --task-shadow: rgba(255, 255, 255, 0.4);
+    }
+    
     .master-layout {
         display: flex;
+        min-height: 100vh;
     }
 
     .content-area {
@@ -46,7 +93,6 @@
     .side-panel {
         background: radial-gradient(circle at top left, #454545, #5c5c5c);
         padding: 20px;
-        height: 100vh;
         width: 230px;
 
         display: flex;
@@ -60,27 +106,23 @@
         text-shadow: 0 0 10px rgb(255, 255, 255);
         padding-bottom: 50px;
     }
-
-    .text-blue { animation: pulse-blue 3s infinite; }
-    .text-red { animation: pulse-red 3s infinite; }
-    .text-yellow { animation: pulse-yellow 3s infinite; }
     
-    @@keyframes pulse-blue {
-        0% {color: #006bb3; text-shadow: 0 0 5px rgba(0, 157, 255, 0.4);}
-        50% {color: #009dff; text-shadow: 0 0 15px rgba(0, 157, 255, 0.8), 0 0 30px rgba(0, 157, 255, 0.5);}
-        100% {color: #006bb3; text-shadow: 0 0 5px rgba(0, 157, 255, 0.4);}
-    }
+    .text-custom {animation: pulse-custom 3s infinite; }
     
-    @@keyframes pulse-red {
-        0% {color: #990000; text-shadow: 0 0 5px rgba(255, 59, 59, 0.4);}
-        50% {color: #ff3b3b; text-shadow: 0 0 15px rgba(255, 59, 59, 0.8), 0 0 30px rgba(255, 59, 59, 0.5);}
-        100% {color: #990000; text-shadow: 0 0 5px rgba(255, 59, 59, 0.4);}
-    }
     
-    @@keyframes pulse-yellow {
-        0% {color: #997a00; text-shadow: 0 0 5px rgba(255, 204, 0, 0.4);}
-        50% {color: #ffcc00; text-shadow: 0 0 15px rgba(255, 204, 0, 0.8), 0 0 30px rgba(255, 204, 0, 0.5);}
-        100% {color: #997a00; text-shadow: 0 0 5px rgba(255, 204, 0, 0.4);}
+    @@keyframes pulse-custom {
+        0% {
+            color: var(--task-color-dark); 
+            text-shadow: 0 0 5px var(--task-shadow-light);
+        }
+        50% {
+            color: var(--task-color); 
+            text-shadow: 0 0 15px var(--task-shadow-strong), 0 0 30px var(--task-shadow-med);
+        }
+        100% {
+            color: var(--task-color-dark); 
+            text-shadow: 0 0 5px var(--task-shadow-light);
+        }
     }
     
     .nav-item {
@@ -109,54 +151,83 @@
         background-color: #262a2e !important; 
         transition: transform 0.1s !important; 
     }
+
+    .custom-task:hover {color: var(--task-color);}
     
-    .btn-programming:hover {
-        background-color: #262a2e;
-        color: #009dff;
+    .custom-task.active {
+        background-color: var(--task-bg-active);
+        color: var(--task-color);
+        border-left: 4px solid var(--task-color);
+        box-shadow: inset 10px 0 15px -10px var(--task-shadow);
     }
     
-    .btn-programming.active {
-        background-color: rgba(0, 157, 255, 0.1);
-        color: #009dff;
-        border-left: 4px solid #009dff;
-        box-shadow: inset 10px 0 15px -10px rgba(0, 157, 255, 0.4);
-    }
-
-    .btn-programming:active { color: #009dff !important; }
-
-  
-    .btn-gym:hover {
-        background-color: #262a2e;
-        color: #ff3b3b;
-    }
-    .btn-gym.active {
-        background-color: rgba(255, 59, 59, 0.1); 
-        color: #ff3b3b;
-        border-left: 4px solid #ff3b3b;
-        box-shadow: inset 10px 0 15px -10px rgba(255, 59, 59, 0.4);
-    }
-
-    .btn-gym:active { color: #ff3b3b !important;}
+    .custom-task:active {color: var(--task-color) !important;}
     
-    .btn-languages:hover {
-        background-color: #262a2e;
-        color: #ffcc00;
-    }
-    .btn-languages.active {
-        background-color: rgba(255, 204, 0, 0.1); 
-        color: #ffcc00;
-        border-left: 4px solid #ffcc00;
-        box-shadow: inset 10px 0px 15px -10px rgba(255, 204, 0, 0.4);
+    /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
+    .rainbow-btn {
+        text-decoration: none;
+        position: relative;
+        padding: 14px 40px;
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        background: #1e1e1e;
+        border: none;
+        border-radius: 14px;
+        cursor: pointer;
+        overflow: hidden;
+        z-index: 1;
+        transition: transform 0.2s ease, box-shadow 0.3s ease;
+        
+        margin-bottom: 20px;
     }
 
-    .btn-languages:active { color: #ffcc00 !important;}
+    .rainbow-btn::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: inherit;
+        background: linear-gradient(
+            90deg,
+            red,
+            orange,
+            yellow,
+            lime,
+            cyan,
+            blue,
+            violet,
+            red
+        );
+        background-size: 300% 100%;
+        animation: rainbowMove 4s linear infinite;
+        z-index: -2;
+    }
     
-    .nav-item:focus,
-    .nav-item:active,
-    .nav-item:focus-visible {
-        box-shadow: none !important;
+    .rainbow-btn::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        background: #1e1e1e;
+        border-radius: inherit;
+        z-index: -1;
     }
-
+    
+    .rainbow-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0 20px rgba(255, 0, 255, 0.4),
+        0 0 40px rgba(0, 255, 255, 0.3);
+    }
+    
+    .rainbow-btn:active {
+        transform: scale(0.96);
+    }
+    
+    @@keyframes rainbowMove {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 300% 50%; }
+    }
+    /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
+    
     @@media (max-width: 768px) {
     .master-layout {
         flex-direction: column !important;
@@ -174,6 +245,12 @@
     .content-area {
         width: 100% !important;
     }
+    }
+
+    .nav-item:focus,
+    .nav-item:focus-visible {
+        outline: none !important;
+        box-shadow: none !important; 
     }
 </style>
 
