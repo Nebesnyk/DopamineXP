@@ -11,3 +11,4 @@ A gamified habit tracker built with **Blazor** to help manage productivity and s
 ![DopamineXP Dashboard](img/start-page-new.png)
 ![DopamineXP Dashboard](img/programming-streak.png)
 ![DopamineXP Dashboard](img/french-edit-mode.png)
+![DopamineXP Dashboard](img/shop.png)
