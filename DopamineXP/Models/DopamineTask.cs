@@ -9,6 +9,22 @@ public class DopamineTask
     public int Level { get; set; } = 1;
     public int Points { get; set; } = 0;
     public int Streak { get; set; } = 0;
+    public DateTime MultiplierExpiration { get; set; } = DateTime.MinValue;
+    public bool HasStreakFreeze { get; set; } = false;
+    private int _multiplierPrice = 3;
+    private int _streakFreezePrice = 5;
+    
+    public int MultiplierPrice
+    {
+        get => _multiplierPrice == 0 ? 3 : _multiplierPrice; 
+        set => _multiplierPrice = value;
+    }
+
+    public int StreakFreezePrice
+    {
+        get => _streakFreezePrice == 0 ? 5 : _streakFreezePrice;
+        set => _streakFreezePrice = value;
+    }
 
     public DateTime LastLogged { get; set; } = DateTime.MinValue;
 

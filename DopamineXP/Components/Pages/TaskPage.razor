@@ -58,13 +58,46 @@
                 </div>
                 
                 <div class="points-streak">
-                    <span class="points-text">@activeTask.Points Points</span>
+                    <span class="points-text">@activeTask.Points @activeTask.Name.Substring(0, 1)P</span>
                     <span class="streak-text">Streak: @activeTask.Streak days</span>
                 </div>
                 
-                <div class="delete-container">
-                    <div class="delete-btn" @onclick="DeleteTask">DELETE TASK</div>
+            </div>
+            <div class="level-text" style="font-weight: 600; font-size: 36px; text-align: center; margin-top: 20px">SHOP</div>
+            <div class="shop-field">
+                @{
+                    bool isBuffActive = DateTime.Now <= activeTask.MultiplierExpiration;
+                }
+
+                <div class="shop-style xp-boost-field"
+                     style="@(isBuffActive ? "box-shadow: 0 8px 25px rgba(0, 255, 102, 0.2); border-color: rgba(0, 255, 102, 0.5);" : "")">
+     
+                    <div class="shop-item-title">XP Buff</div>
+                    <div class="shop-item-desc">
+                        2x XP for 24 Hours
+                    </div>
+    
+                    <button class="buy-btn xp-buy"
+                            disabled="@(isBuffActive || activeTask.Points < activeTask.MultiplierPrice)"
+                            @onclick="BuyMultiplier">
+                        @(isBuffActive ? "ACTIVE" : $"{activeTask.MultiplierPrice} {activeTask.Name.Substring(0, 1)}P")
+                    </button>
                 </div>
+
+                <div class="shop-style streak-shield-field"
+                     style="@(activeTask.HasStreakFreeze ? "box-shadow: 0 8px 25px rgba(0, 157, 255, 0.2); border-color: rgba(0, 157, 255, 0.5);" : "" )">
+                    <div class="shop-item-title">Streak Freeze</div>
+                    <div class="shop-item-desc">Protects streak if you miss a day</div>
+                    <button class="buy-btn shield-buy"
+                            disabled="@(activeTask.HasStreakFreeze || activeTask.Points < activeTask.StreakFreezePrice)"
+                            @onclick="BuyStreakFreeze">
+                        @(activeTask.HasStreakFreeze ? "ACTIVE" : $"{activeTask.StreakFreezePrice} {activeTask.Name.Substring(0, 1)})P")
+                    </button>
+                </div>
+            </div>
+            
+            <div class="delete-container">
+                <div class="delete-btn" @onclick="DeleteTask">DELETE TASK</div>
             </div>
         </div>
     }
@@ -93,8 +126,12 @@
     private void AppendXp()
     {
         if (_minutesSpent == null || activeTask == null) return;
+
+        double shopBuff = 1.0;
+        if (DateTime.Now <= activeTask.MultiplierExpiration)
+            shopBuff = 2.0;
         
-        activeTask.XP += (int)(2 * _minutesSpent.Value * (activeTask.Streak * 0.1 + 1));
+        activeTask.XP += (int)(2 * _minutesSpent.Value * (activeTask.Streak * 0.1 + 1)) * shopBuff;
         _minutesSpent = null;
 
         DateTime today = DateTime.Today;
@@ -106,12 +143,17 @@
                 activeTask.Streak++;
                 _streakMessage = $"STREAK HIT! {activeTask.Streak} DAYS!";
             }
+            else if (activeTask.LastLogged == today.AddDays(-2) && activeTask.HasStreakFreeze)
+            {
+                activeTask.HasStreakFreeze = false;
+                activeTask.Streak++; 
+                _streakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Streak} DAYS!";
+            }
             else
             {
                 activeTask.Streak = 1;
                 _streakMessage = "STREAK STARTED! DAY 1!";
             }
-
             activeTask.LastLogged = today;
         }
         
@@ -185,6 +227,32 @@
             }
         }
     }
+
+    private void BuyMultiplier()
+    {
+        if (activeTask != null && activeTask.Points >= activeTask.MultiplierPrice)
+        {
+            activeTask.Points -= activeTask.MultiplierPrice;
+            activeTask.MultiplierPrice *= 2;
+            activeTask.MultiplierExpiration = DateTime.Now.AddHours(24);
+            
+            Brain.OnChange?.Invoke();
+            Brain.SaveToFile();
+        }
+    }
+
+    private void BuyStreakFreeze()
+    {
+        if (activeTask != null && activeTask.Points >= activeTask.StreakFreezePrice)
+        {
+            activeTask.Points -= activeTask.StreakFreezePrice;
+            activeTask.StreakFreezePrice *= 2;
+            activeTask.HasStreakFreeze = true;
+            
+            Brain.OnChange?.Invoke();
+            Brain.SaveToFile();
+        }
+    }
 }
 
 <style>
@@ -233,6 +301,8 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
+
+        border-bottom: 2px solid var(--theme-color);
     }
     
     .level-container {
@@ -354,6 +424,7 @@
         display: flex;
         justify-content: center;
         margin-top: 30px;
+        margin-bottom: 30px;
     }
 
     .delete-btn {
@@ -426,6 +497,102 @@
 
     .cancel-btn:hover {
         color: #ffffff;
+    }
+
+    .shop-field {
+        display: flex;
+        padding: 30px;
+        justify-content: space-around;
+        gap: 20px; 
+    }
+
+    .shop-style {
+        width: 170px; 
+        height: 200px; 
+
+        background: linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%);
+        padding: 15px;
+        border-radius: 12px;
+        color: #ffffff;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        text-align: center;
+
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease; 
+    }
+
+    .shop-style:hover {
+        transform: translateY(-5px);
+    }
+    
+    .xp-boost-field:hover {
+        box-shadow: 0 8px 25px rgba(0, 255, 102, 0.2);
+        border-color: rgba(0, 255, 102, 0.5);
+    }
+
+    .streak-shield-field:hover {
+        box-shadow: 0 8px 25px rgba(0, 157, 255, 0.2);
+        border-color: rgba(0, 157, 255, 0.5);
+    }
+
+    .shop-item-icon {
+        font-size: 32px;
+        margin-bottom: -5px;
+    }
+
+    .shop-item-title {
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .shop-item-desc {
+        font-size: 14px;
+        color: #aaaaaa;
+        line-height: 1.2;
+    }
+
+    .buy-btn {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        transition: all 0.2s ease;
+    }
+
+    .buy-btn:hover {
+        background: #fff;
+        color: #000;
+    }
+
+    .buy-btn:focus {
+        outline: none !important;
+    }
+
+    .buy-btn:disabled {
+        background: rgba(255, 255, 255, 0.02) !important;
+        color: #555555 !important;
+        cursor: not-allowed !important; 
+        box-shadow: none !important;
+        transform: none !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    }
+
+    .shop-style:has(.buy-btn:disabled):hover {
+        transform: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
     @@media (max-width: 768px) {
