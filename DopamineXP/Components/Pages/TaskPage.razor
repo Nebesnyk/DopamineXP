@@ -91,7 +91,7 @@
                     <button class="buy-btn shield-buy"
                             disabled="@(activeTask.HasStreakFreeze || activeTask.Points < activeTask.StreakFreezePrice)"
                             @onclick="BuyStreakFreeze">
-                        @(activeTask.HasStreakFreeze ? "ACTIVE" : $"{activeTask.StreakFreezePrice} {activeTask.Name.Substring(0, 1)})P")
+                        @(activeTask.HasStreakFreeze ? "ACTIVE" : $"{activeTask.StreakFreezePrice} {activeTask.Name.Substring(0, 1)}P")
                     </button>
                 </div>
             </div>
@@ -620,6 +620,12 @@
             flex-direction: column;
             text-align: center;
             gap: 10px;
+        }
+        
+        .shop-field {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
     }
 </style>
