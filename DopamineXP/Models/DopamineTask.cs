@@ -27,7 +27,7 @@ public class DopamineTask
     }
 
     public DateTime LastLogged { get; set; } = DateTime.MinValue;
-
+    public string DailyStreakMessage { get; set; } = "";
     
     
     public string GetRgba(double alpha)

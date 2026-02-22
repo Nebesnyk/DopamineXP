@@ -49,10 +49,10 @@
                         <div class="level-up-btn @CanLevelUp()" @onclick="LevelUp">LEVEL UP!</div>
                     </div>
                     
-                    @if (!string.IsNullOrEmpty(_streakMessage))
+                    @if (activeTask.LastLogged == DateTime.Today && !string.IsNullOrEmpty(activeTask.DailyStreakMessage))
                     {
                         <div style="color: #00ff66; text-align: center; margin-top: 15px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 255, 102, 0.5); animation: fade-in 0.5s;">
-                            @_streakMessage
+                            @activeTask.DailyStreakMessage
                         </div>
                     }
                 </div>
@@ -110,7 +110,6 @@
     private DopamineTask? activeTask;
     private int? _minutesSpent;
     private double _threshold = 100;
-    private string _streakMessage = "";
 
     protected override void OnParametersSet()
     {
@@ -141,18 +140,18 @@
             if (activeTask.LastLogged == today.AddDays(-1))
             {
                 activeTask.Streak++;
-                _streakMessage = $"STREAK HIT! {activeTask.Streak} DAYS!";
+                activeTask.DailyStreakMessage = $"STREAK HIT! {activeTask.Streak} DAYS!";
             }
             else if (activeTask.LastLogged == today.AddDays(-2) && activeTask.HasStreakFreeze)
             {
                 activeTask.HasStreakFreeze = false;
                 activeTask.Streak++; 
-                _streakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Streak} DAYS!";
+                activeTask.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Streak} DAYS!";
             }
             else
             {
                 activeTask.Streak = 1;
-                _streakMessage = "STREAK STARTED! DAY 1!";
+                activeTask.DailyStreakMessage = "STREAK STARTED! DAY 1!";
             }
             activeTask.LastLogged = today;
         }
