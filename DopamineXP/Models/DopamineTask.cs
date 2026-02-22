@@ -10,7 +10,7 @@ public class DopamineTask
     public int Points { get; set; } = 0;
     public int Streak { get; set; } = 0;
 
-    public DateTime LastLog { get; set; } = DateTime.MinValue;
+    public DateTime LastLogged { get; set; } = DateTime.MinValue;
 
     
     
