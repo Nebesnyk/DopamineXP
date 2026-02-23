@@ -226,7 +226,7 @@
         activeTask.XP -= _threshold;
         activeTask.Points += activeTask.Level;
         activeTask.Level++;
-        _threshold = (int)Math.Pow(1.2, activeTask.Level) * 20;
+        _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 20);
         
         Brain.OnChange?.Invoke();
         Brain.SaveToFile();
