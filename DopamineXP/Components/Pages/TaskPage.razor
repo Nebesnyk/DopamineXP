@@ -152,10 +152,7 @@
             {
                 if (activeTask.MinutesLoggedToday < 60)
                 {
-                    activeTask.Level = 1;
-                    activeTask.XP = 0;
-                    activeTask.Streak = 0;
-                    activeTask.Points = 0;
+                    
                 }
 
                 activeTask.MinutesLoggedToday = 0;
@@ -313,6 +310,8 @@
         activeTask.Cores = (activeTask.Level < 15) ? 1 : activeTask.Level / 5;
         activeTask.Level = 0;
         activeTask.XP = 0;
+        activeTask.MultiplierPrice = 3;
+        activeTask.StreakFreezePrice = 5;
         activeTask.AmountOfPrestiges++;
         activeTask.LastShardUpdate = DateTime.Now;
         Brain.SaveToFile();
