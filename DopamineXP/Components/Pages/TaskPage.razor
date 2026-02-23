@@ -97,15 +97,21 @@
                 </div>
             </div>
             <div class="prestige-container">
-                @if (activeTask.Level < 10)
+                @if (activeTask.Level < 5)
                 {
-                    <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 10 IN ORDER TO UNLOCK PRESTIGE</div>
+                    <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 5 IN ORDER TO UNLOCK PRESTIGE</div>
                 }
                 else
                 {
-                    <div class="prestige-btn">PRESTIGE</div>
+                    int cores = activeTask.Level / 10;
+                    <div class="prestige-btn" @onclick="Prestige">PRESTIGE AND GET @cores @activeTask.Name.ToUpper() @(cores == 1 ? "CORE" : "CORES")</div>
                 }
             </div>
+            
+            @if (activeTask.AmountOfPrestiges > 0)
+            {
+                <a href=@($"/task/cores/{System.Net.WebUtility.UrlEncode(activeTask.Name)}") class="to-cores-page-btn">GO TO THE CORES LABORATORY</a>
+            }
             
             <div class="delete-container">
                 <div class="delete-btn" @onclick="DeleteTask">DELETE TASK</div>
@@ -263,9 +269,25 @@
             Brain.SaveToFile();
         }
     }
+
+    private void Prestige()
+    {
+        activeTask.Cores = activeTask.Level / 5;
+        activeTask.Level = 0;
+        activeTask.XP = 0;
+        activeTask.AmountOfPrestiges++;
+        activeTask.LastShardUpdate = DateTime.Now;
+        Brain.SaveToFile();
+        
+        NavManager.NavigateTo($"/task/cores/{System.Net.WebUtility.UrlEncode(activeTask.Name)}");
+    }
 }
 
 <style>
+    a {
+        text-decoration: none;
+    }
+    
     .tracker-container {
         display: flex;
         flex-direction: column;
@@ -609,7 +631,7 @@
     .prestige-container {
         display: flex;
         padding: 30px;
-        justify-content: space-around;
+        text-align: center;
         gap: 20px;
     }
 
@@ -622,7 +644,7 @@
         line-height: 1.6;
         margin: 25px auto;
         padding: 20px;
-        width: 90%;
+        width: 80%;
         max-width: 400px;
 
         background: linear-gradient(180deg, rgba(255, 204, 0, 0.05) 0%, rgba(20, 20, 20, 0.8) 100%);
@@ -649,7 +671,6 @@
     }
 
     .prestige-btn {
-        display: block;
         margin: 20px auto;
         padding: 15px 50px;
         font-size: 24px;
@@ -660,6 +681,7 @@
         border: 3px solid var(--theme-color);
         border-radius: 8px;
         cursor: pointer;
+        width: 80%;
 
         text-shadow: 0 0 10px var(--theme-color);
         box-shadow: 0 0 10px var(--theme-color), inset 0 0 10px var(--theme-color);
@@ -690,6 +712,27 @@
     .prestige-btn:active {
         transform: scale(0.95);
         box-shadow: 0 0 20px var(--theme-color);
+    }
+    
+    .to-cores-page-btn {
+        margin: 20px auto;
+        padding: 15px 30px;
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 4px;
+        color: #ffffff;
+        background: transparent;
+        border: 3px solid var(--theme-color);
+        border-radius: 8px;
+        cursor: pointer;
+        width: 40%;
+        transition: 0.25s ease;
+        text-align: center;
+    }
+    
+    .to-cores-page-btn:hover {
+        text-shadow: 0 0 10px var(--theme-color);
+        box-shadow: 0 0 10px var(--theme-color), inset 0 0 10px var(--theme-color);
     }
     
 

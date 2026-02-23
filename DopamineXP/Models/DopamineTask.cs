@@ -28,6 +28,14 @@ public class DopamineTask
 
     public DateTime LastLogged { get; set; } = DateTime.MinValue;
     public string DailyStreakMessage { get; set; } = "";
+
+    public int Cores { get; set; } = 0;
+    public int AmountOfPrestiges { get; set; } = 0;
+    
+    public int Shards { get; set; } = 0;
+    public DateTime LastShardUpdate { get; set; } = DateTime.Now;
+
+    public int FirstGeneratorsAmount { get; set; } = 0;
     
     
     public string GetRgba(double alpha)
