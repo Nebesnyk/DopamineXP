@@ -53,7 +53,7 @@
                         <div class="level-up-btn @CanLevelUp()" @onclick="LevelUp">LEVEL UP!</div>
                     </div>
                     
-                    @if (!string.IsNullOrEmpty(activeTask.DailyStreakMessage) && (activeTask.LastLogged == DateTime.Today || activeTask.IsHardcore))
+                    @if (!string.IsNullOrEmpty(activeTask.DailyStreakMessage) && (activeTask.LastStreakEarnedDate == DateTime.Today || activeTask.IsHardcore))
                     {
                         string colorClass = activeTask.DailyStreakMessage.Contains("FREEZE") ? "streak-msg-freeze" : "streak-msg-hit";
                         if (activeTask.IsHardcore && activeTask.MinutesLoggedToday < 60)
@@ -148,14 +148,20 @@
         {
             _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 20);
             
-            if (activeTask.IsHardcore && activeTask.LastLogged < DateTime.Today)
+            if (activeTask.IsHardcore && activeTask.LastResetDate < DateTime.Today)
             {
                 if (activeTask.MinutesLoggedToday < 60)
                 {
-                    
+                    activeTask.Level = 1;
+                    activeTask.XP = 0;
+                    activeTask.Streak = 0;
+                    activeTask.Points = 0;
+                    activeTask.MultiplierPrice = 3;
+                    activeTask.StreakFreezePrice = 5;
                 }
 
                 activeTask.MinutesLoggedToday = 0;
+                activeTask.LastResetDate = DateTime.Today;
             }
 
             if (activeTask.IsHardcore && activeTask.MinutesLoggedToday < 60)
@@ -178,16 +184,16 @@
 
         DateTime today = DateTime.Today;
 
-        if (activeTask.LastLogged < today)
+        if (activeTask.LastStreakEarnedDate < today)
         {
             if (!activeTask.IsHardcore || activeTask.MinutesLoggedToday >= 60)
             {
-                if (activeTask.LastLogged == today.AddDays(-1))
+                if (activeTask.LastStreakEarnedDate == today.AddDays(-1))
                 {
                     activeTask.Streak++;
                     activeTask.DailyStreakMessage = $"STREAK HIT! {activeTask.Streak} DAYS!";
                 }
-                else if (activeTask.LastLogged == today.AddDays(-2) && activeTask.HasStreakFreeze)
+                else if (activeTask.LastStreakEarnedDate == today.AddDays(-2) && activeTask.HasStreakFreeze)
                 {
                     activeTask.HasStreakFreeze = false;
                     activeTask.Streak++; 
@@ -198,7 +204,7 @@
                     activeTask.Streak = 1;
                     activeTask.DailyStreakMessage = "STREAK STARTED! DAY 1!";
                 }
-                activeTask.LastLogged = today;
+                activeTask.LastStreakEarnedDate = today;
             }
             else
             {
@@ -207,6 +213,8 @@
             
             
         }
+        
+        
         
         Brain.OnChange?.Invoke(); 
         Brain.SaveToFile();

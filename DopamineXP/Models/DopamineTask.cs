@@ -29,7 +29,9 @@ public class DopamineTask
     public bool IsHardcore { get; set; } = true;
     public double MinutesLoggedToday { get; set; } = 0;
     
-    public DateTime LastLogged { get; set; } = DateTime.MinValue;
+    public DateTime LastStreakEarnedDate { get; set; } = DateTime.MinValue;
+    public DateTime LastResetDate { get; set; } = DateTime.Today;
+    
     public string DailyStreakMessage { get; set; } = "";
 
     public int Cores { get; set; } = 0;
