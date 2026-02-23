@@ -96,6 +96,16 @@
                     </button>
                 </div>
             </div>
+            <div class="prestige-container">
+                @if (activeTask.Level < 10)
+                {
+                    <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 10 IN ORDER TO UNLOCK PRESTIGE</div>
+                }
+                else
+                {
+                    <div class="prestige-btn">PRESTIGE</div>
+                }
+            </div>
             
             <div class="delete-container">
                 <div class="delete-btn" @onclick="DeleteTask">DELETE TASK</div>
@@ -119,7 +129,7 @@
         
         if (activeTask != null)
         {
-            _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 100);
+            _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 50);
         }
     }
 
@@ -175,7 +185,7 @@
         activeTask.XP -= _threshold;
         activeTask.Points += activeTask.Level;
         activeTask.Level++;
-        _threshold = Math.Pow(1.2, activeTask.Level) * 100;
+        _threshold = (int)Math.Pow(1.2, activeTask.Level) * 50;
         
         Brain.OnChange?.Invoke();
         Brain.SaveToFile();
@@ -504,6 +514,7 @@
         padding: 30px;
         justify-content: space-around;
         gap: 20px; 
+        border-bottom: 2px solid var(--theme-color);
     }
 
     .shop-style {
@@ -595,6 +606,93 @@
         border-color: rgba(255, 255, 255, 0.1);
     }
 
+    .prestige-container {
+        display: flex;
+        padding: 30px;
+        justify-content: space-around;
+        gap: 20px;
+    }
+
+    .prestige-explanation-text {
+        font-size: 16px;
+        font-weight: 700;
+        color: #ffcc00; 
+        text-align: center;
+        letter-spacing: 1.5px;
+        line-height: 1.6;
+        margin: 25px auto;
+        padding: 20px;
+        width: 90%;
+        max-width: 400px;
+
+        background: linear-gradient(180deg, rgba(255, 204, 0, 0.05) 0%, rgba(20, 20, 20, 0.8) 100%);
+        border: 1px solid rgba(255, 204, 0, 0.4);
+        border-radius: 12px;
+
+        text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        box-shadow: 0 0 20px rgba(255, 204, 0, 0.15), inset 0 0 15px rgba(255, 204, 0, 0.05);
+
+        animation: prestige-breathe 4s infinite alternate ease-in-out;
+    }
+
+    @@keyframes prestige-breathe {
+        0% {
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.15), inset 0 0 15px rgba(255, 204, 0, 0.05);
+            border-color: rgba(255, 204, 0, 0.3);
+        }
+        100% {
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.9);
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.3), inset 0 0 20px rgba(255, 204, 0, 0.1);
+            border-color: rgba(255, 204, 0, 0.7);
+        }
+    }
+
+    .prestige-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 15px 50px;
+        font-size: 24px;
+        font-weight: 900;
+        letter-spacing: 4px;
+        color: #ffffff;
+        background: transparent;
+        border: 3px solid var(--theme-color);
+        border-radius: 8px;
+        cursor: pointer;
+
+        text-shadow: 0 0 10px var(--theme-color);
+        box-shadow: 0 0 10px var(--theme-color), inset 0 0 10px var(--theme-color);
+
+        animation: prestige-border-energy 1.5s infinite alternate ease-in-out;
+        transition: all 0.2s ease;
+    }
+
+    @@keyframes prestige-border-energy {
+        0% {
+            box-shadow: 0 0 5px var(--theme-color), inset 0 0 5px var(--theme-color);
+            border-color: rgba(255, 255, 255, 0.2); 
+        }
+        100% {
+            box-shadow: 0 0 30px var(--theme-color), inset 0 0 15px var(--theme-color);
+            border-color: var(--theme-color); 
+        }
+    }
+
+    .prestige-btn:hover {
+        background: var(--theme-color);
+        color: #111; 
+        text-shadow: none;
+        transform: scale(1.05);
+        box-shadow: 0 0 50px var(--theme-color);
+    }
+
+    .prestige-btn:active {
+        transform: scale(0.95);
+        box-shadow: 0 0 20px var(--theme-color);
+    }
+    
+
     @@media (max-width: 768px) {
         .tracker-container { padding: 15px !important; }
 
@@ -646,4 +744,6 @@
             text-shadow: 0 0 10px rgba(0, 157, 255, 0.5);
         }
     }
+    
+    
 </style>
