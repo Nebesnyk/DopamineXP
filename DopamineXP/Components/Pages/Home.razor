@@ -21,6 +21,17 @@
                 <span style="font-size: 20px; margin-bottom: 5px;">Turn on hardcore?</span>
                 <input type="checkbox" class="hardcore-input" @bind="IsHardcore"/>
             </div>
+            
+            @if (IsHardcore)
+            {
+                <div class="hardcore-warning">WARNING</div>
+                <div class="hardcore-warning-explanation">
+                    Hardcore mode will require you to spend at least 60 minuted
+                    on a task every day. If you don't meet this requirement -
+                    your level, xp, streak and points will be reset (but not cores and shards).
+                    The price of streak freeze will be doubled after each purchase. Good luck (you will need it)
+                </div>
+            }
         </div>
         
         <div class="create-task-btn" @onclick="CreateTask">CREATE THE TASK!</div>
@@ -187,8 +198,37 @@
         25% { transform: translate(1px, 1px); }
         50% { transform: translate(-1px, -1px); }
         75% { transform: translate(1px, -1px); }
-        100% { transform: translate(0, 0); }
+        100% { transform: translate(0, 0); } 
     }
+
+    .hardcore-warning {
+        color: #ff0000;
+        font-size: 32px;
+        font-weight: 900;
+        letter-spacing: 8px;
+        text-align: center;
+        margin-top: 20px;
+        text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+    }
+
+    .hardcore-warning-explanation {
+        background: rgba(20, 0, 0, 0.9);
+        border-left: 5px solid #ff1e00;
+        padding: 20px;
+        width: 85%;
+        max-width: 500px;
+        color: #cccccc;
+        font-family: 'Courier New', Courier, monospace; 
+        font-size: 14px;
+        line-height: 1.6;
+        text-align: left;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border-radius: 0 8px 8px 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    
 
     /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
     .create-task-btn {
@@ -207,7 +247,7 @@
         transition: transform 0.2s ease, box-shadow 0.3s ease;
         
         text-align: center;
-        margin: 50px auto 0 auto;
+        margin: 50px auto 50px auto;
         width: 300px;
     }
 
