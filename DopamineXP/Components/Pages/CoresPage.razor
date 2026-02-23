@@ -21,14 +21,19 @@
                     <div class="resource-value">@activeTask.Cores</div>
                 </div>
                 
+                <div class="resource-container prestiges-container">
+                    <div class="currency-text">PRESTIGES</div>
+                    <div class="resource-value">@(activeTask.AmountOfPrestiges)</div>
+                </div>
+                
                 <div class="resource-container shards-container">
                     <div class="currency-text">SHARDS</div>
-                    <div class="resource-value">@activeTask.Shards</div>
+                    <div class="resource-value">@((int)activeTask.Shards)</div>
                 </div>
             </div>
             
             <div class="generators-container"></div>
-            <div class="first-shards-generator-container">
+            <div class="shards-generator-container first-shards-generator-container">
                 <div class="first-generator-text">FIRST SHARD GENERATOR</div>
                 <div class="first-generators-amount-text">You have: @activeTask.FirstGeneratorsAmount @(activeTask.FirstGeneratorsAmount == 1 ? "generator" : "generators")</div>
                 <button class="first-generator-btn" 
@@ -57,7 +62,7 @@
 
             if (_shardTimer == null) 
             {
-                _shardTimer = new Timer(5000);
+                _shardTimer = new Timer(100);
                 _shardTimer.Elapsed += GenerateShardLive;
                 _shardTimer.Start();
             }
@@ -70,15 +75,13 @@
         if (activeTask.AmountOfPrestiges > 0)
         {
             TimeSpan timeAway = DateTime.Now - activeTask.LastShardUpdate;
-
-            int ticks = (int)(timeAway.TotalSeconds / 5);
+            int secondsAway = (int)timeAway.TotalSeconds;
             
-            if (ticks > 0)
+            if (secondsAway > 0)
             {
-                activeTask.Shards += (ticks * activeTask.FirstGeneratorsAmount);
-                
-                // Move the timestamp forward to account for the generated Shards
-                activeTask.LastShardUpdate = activeTask.LastShardUpdate.AddSeconds(ticks * 5);
+                // Math: 10 seconds away * 5 generators = 50 shards.
+                activeTask.Shards += (secondsAway * activeTask.FirstGeneratorsAmount);
+                activeTask.LastShardUpdate = activeTask.LastShardUpdate.AddSeconds(secondsAway);
                 Brain.SaveToFile();
             }
         }
@@ -88,7 +91,7 @@
     {
         if (activeTask != null && activeTask.AmountOfPrestiges > 0)
         {
-            activeTask.Shards += activeTask.FirstGeneratorsAmount;
+            activeTask.Shards += activeTask.FirstGeneratorsAmount / 10.0;
             activeTask.LastShardUpdate = DateTime.Now;
             
             Brain.SaveToFile();
@@ -104,7 +107,7 @@
 
     private void BuyFirstGenerator()
     {
-        activeTask.Cores -= activeTask.FirstGeneratorsAmount + 1;
+        activeTask.Cores -= (int)activeTask.FirstGeneratorsAmount + 1;
         activeTask.FirstGeneratorsAmount++;
 
         if (activeTask.FirstGeneratorsAmount == 1)
@@ -113,7 +116,7 @@
 
             if (_shardTimer == null)
             {
-                _shardTimer = new Timer(5000);
+                _shardTimer = new Timer(100);
                 _shardTimer.Elapsed += GenerateShardLive;
                 _shardTimer.Start();
             }
@@ -148,12 +151,12 @@
     }
     
     .currencies-container {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        width: max-content;
         justify-content: center;
         gap: 30px;
-        margin-top: 20px;
-        margin-bottom: 40px;
-        width: 100%;
+        margin: 20px auto 40px;
     }
     
     .resource-container {
@@ -163,6 +166,7 @@
         text-align: center;
         min-width: 120px;
         box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        width: 100%
     }
 
     .cores-container {
@@ -173,6 +177,11 @@
     .shards-container {
         border: 2px solid #00ffcc; 
         box-shadow: 0 0 15px rgba(0, 255, 204, 0.2), inset 0 0 15px rgba(0,0,0,0.8);
+    }
+    
+    .prestiges-container {
+        border: 2px solid #aa00ff;
+        box-shadow: 0 0 15px rgba(200, 0, 255, 0.2), inset 0 0 15px rgba(0,0,0,0.8);
     }
 
     .currency-text {
@@ -234,6 +243,27 @@
     .first-generators-amount-text {
         font-size: 14px;
         color: rgb(145, 156, 193);
+    }
+    
+    @@media (max-width: 768px) {
+        .shards-generator-container {
+            display: flex;
+            flex-direction: column;
+            height: 180px;
+        }
+
+        .currencies-container {
+            width: 100%;
+            padding: 0 15px;
+            box-sizing: border-box;
+
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .shards-container {
+            grid-column: span 2;
+        }
     }
     
 </style>

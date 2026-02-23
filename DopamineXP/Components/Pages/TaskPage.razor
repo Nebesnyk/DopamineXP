@@ -103,7 +103,11 @@
                 }
                 else
                 {
-                    int cores = activeTask.Level / 10;
+                    int cores;
+                    if (activeTask.Level < 15)
+                        cores = 1;
+                    else
+                        cores = activeTask.Level / 5 - 1;
                     <div class="prestige-btn" @onclick="Prestige">PRESTIGE AND GET @cores @activeTask.Name.ToUpper() @(cores == 1 ? "CORE" : "CORES")</div>
                 }
             </div>
@@ -147,7 +151,7 @@
         if (DateTime.Now <= activeTask.MultiplierExpiration)
             shopBuff = 2.0;
         
-        activeTask.XP += (int)(2 * _minutesSpent.Value * (activeTask.Streak * 0.1 + 1)) * shopBuff;
+        activeTask.XP += (int)(2 * _minutesSpent.Value * (activeTask.Streak * 0.1 + 1)) * shopBuff * (activeTask.AmountOfPrestiges + 1);
         _minutesSpent = null;
 
         DateTime today = DateTime.Today;
@@ -682,6 +686,7 @@
         border-radius: 8px;
         cursor: pointer;
         width: 80%;
+        text-align: center;
 
         text-shadow: 0 0 10px var(--theme-color);
         box-shadow: 0 0 10px var(--theme-color), inset 0 0 10px var(--theme-color);
@@ -785,6 +790,20 @@
         .streak-msg-freeze {
             color: #009dff;
             text-shadow: 0 0 10px rgba(0, 157, 255, 0.5);
+        }
+
+        .prestige-btn {
+            padding: 15px 20px !important; 
+            font-size: 18px !important; 
+            letter-spacing: 2px !important;
+            width: 100% !important;
+        }
+        
+        .to-cores-page-btn {
+            padding: 15px 20px !important;
+            font-size: 18px !important;
+            letter-spacing: 2px !important;
+            width: 70% !important;
         }
     }
     
