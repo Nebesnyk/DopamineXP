@@ -51,11 +51,17 @@
 
     private void UpdateState()
     {
-        string url = NavManager.Uri.ToLower();
+        string url = NavManager.Uri;
 
-        if (url.Contains("/task/"))
+        if (url.Contains("/task/cores/"))
         {
-            string taskName = NavManager.Uri.Split("/task/").Last();
+            string taskName = url.Split("/task/cores/").Last();
+            taskName = System.Net.WebUtility.UrlDecode(taskName);
+            activeTask = Brain.CustomTasks.FirstOrDefault(t => t.Name.Equals(taskName, StringComparison.OrdinalIgnoreCase));
+        }
+        else if (url.Contains("/task/"))
+        {
+            string taskName = url.Split("/task/").Last();
             taskName = System.Net.WebUtility.UrlDecode(taskName);
             activeTask = Brain.CustomTasks.FirstOrDefault(t => t.Name == taskName);
         }

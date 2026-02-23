@@ -27,12 +27,14 @@
                 </div>
             </div>
             
-            <div class="first-shards-generator-container">
-                <div class="first-generator-text">FIRST SHARD GENERATOR</div>
-                <div class="first-generators-amount-text">You have: @activeTask.FirstGeneratorsAmount @(activeTask.FirstGeneratorsAmount == 1 ? "generator" : "generators")</div>
-                <button class="first-generator-btn" 
-                        disabled="@(activeTask.Cores < activeTask.FirstGeneratorsAmount + 1)"
-                        @onclick="BuyFirstGenerator">BUY FOR @(activeTask.FirstGeneratorsAmount + 1) @(activeTask.Cores == 1 ? "CORE" : "CORES")</button>
+            <div class="generators-container">
+                <div class="first-shards-generator-container">
+                    <div class="first-generator-text">FIRST SHARD GENERATOR</div>
+                    <div class="first-generators-amount-text">You have: @activeTask.FirstGeneratorsAmount @(activeTask.FirstGeneratorsAmount == 1 ? "generator" : "generators")</div>
+                    <button class="first-generator-btn" 
+                            disabled="@(activeTask.Cores < activeTask.FirstGeneratorsAmount + 1)"
+                            @onclick="BuyFirstGenerator">BUY FOR @(activeTask.FirstGeneratorsAmount + 1) @(activeTask.Cores == 1 ? "CORE" : "CORES")</button>
+                </div>
             </div>
         </div>
     }
