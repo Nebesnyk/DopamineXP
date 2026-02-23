@@ -19,6 +19,10 @@
                 {
                     <h1 class="task-title">@activeTask.Name.ToUpper()</h1>
                     <div class="edit-btn" @onclick="ToggleEdit">EDIT SETTINGS</div>
+                    if (activeTask.IsHardcore)
+                    {
+                        <div class="hardcore-mode-text">HARDCORE MODE IS ON</div>
+                    }
                 }
                 else
                 {
@@ -49,12 +53,15 @@
                         <div class="level-up-btn @CanLevelUp()" @onclick="LevelUp">LEVEL UP!</div>
                     </div>
                     
-                    @if (activeTask.LastLogged == DateTime.Today && !string.IsNullOrEmpty(activeTask.DailyStreakMessage))
+                    @if (!string.IsNullOrEmpty(activeTask.DailyStreakMessage) && (activeTask.LastLogged == DateTime.Today || activeTask.IsHardcore))
                     {
                         string colorClass = activeTask.DailyStreakMessage.Contains("FREEZE") ? "streak-msg-freeze" : "streak-msg-hit";
-                        <div class="streak-msg-base @colorClass" style="color: #00ff66; text-align: center; margin-top: 15px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 255, 102, 0.5); animation: fade-in 0.5s;">
+                        if (activeTask.IsHardcore && activeTask.MinutesLoggedToday < 60)
+                            colorClass = "streak-msg-hardcore";
+                        <div class="streak-msg-base @colorClass">
                             @activeTask.DailyStreakMessage
                         </div>
+                        
                     }
                 </div>
                 
@@ -140,6 +147,22 @@
         if (activeTask != null)
         {
             _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 20);
+            
+            if (activeTask.IsHardcore && activeTask.LastLogged < DateTime.Today)
+            {
+                if (activeTask.MinutesLoggedToday < 60)
+                {
+                    activeTask.Level = 1;
+                    activeTask.XP = 0;
+                    activeTask.Streak = 0;
+                    activeTask.Points = 0;
+                }
+
+                activeTask.MinutesLoggedToday = 0;
+            }
+
+            if (activeTask.IsHardcore && activeTask.MinutesLoggedToday < 60)
+                activeTask.DailyStreakMessage = $"You have spent {activeTask.MinutesLoggedToday} minutes out of 60";
         }
     }
 
@@ -147,6 +170,8 @@
     {
         if (_minutesSpent == null || activeTask == null) return;
 
+        activeTask.MinutesLoggedToday += _minutesSpent.Value;
+        
         double shopBuff = 1.0;
         if (DateTime.Now <= activeTask.MultiplierExpiration)
             shopBuff = 2.0;
@@ -158,23 +183,32 @@
 
         if (activeTask.LastLogged < today)
         {
-            if (activeTask.LastLogged == today.AddDays(-1))
+            if (!activeTask.IsHardcore || activeTask.MinutesLoggedToday >= 60)
             {
-                activeTask.Streak++;
-                activeTask.DailyStreakMessage = $"STREAK HIT! {activeTask.Streak} DAYS!";
-            }
-            else if (activeTask.LastLogged == today.AddDays(-2) && activeTask.HasStreakFreeze)
-            {
-                activeTask.HasStreakFreeze = false;
-                activeTask.Streak++; 
-                activeTask.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Streak} DAYS!";
+                if (activeTask.LastLogged == today.AddDays(-1))
+                {
+                    activeTask.Streak++;
+                    activeTask.DailyStreakMessage = $"STREAK HIT! {activeTask.Streak} DAYS!";
+                }
+                else if (activeTask.LastLogged == today.AddDays(-2) && activeTask.HasStreakFreeze)
+                {
+                    activeTask.HasStreakFreeze = false;
+                    activeTask.Streak++; 
+                    activeTask.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Streak} DAYS!";
+                }
+                else
+                {
+                    activeTask.Streak = 1;
+                    activeTask.DailyStreakMessage = "STREAK STARTED! DAY 1!";
+                }
+                activeTask.LastLogged = today;
             }
             else
             {
-                activeTask.Streak = 1;
-                activeTask.DailyStreakMessage = "STREAK STARTED! DAY 1!";
+                activeTask.DailyStreakMessage = $"You have spent {activeTask.MinutesLoggedToday} minutes out of 60";
             }
-            activeTask.LastLogged = today;
+            
+            
         }
         
         Brain.OnChange?.Invoke(); 
@@ -456,6 +490,29 @@
         color: #ffffff;
     }
 
+    .streak-msg-base {
+        text-align: center;
+        margin-top: 15px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        animation: fade-in 0.5s;
+    }
+
+    .streak-msg-hit {
+        color: #00ff66;
+        text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+    }
+
+    .streak-msg-freeze {
+        color: #009dff;
+        text-shadow: 0 0 10px rgba(0, 157, 255, 0.5);
+    }
+
+    .streak-msg-hardcore {
+        color: #ff5900;
+        text-shadow: 0 0 10px rgba(255, 30, 0, 0.5);
+    }
+
     .delete-container {
         display: flex;
         justify-content: center;
@@ -498,6 +555,21 @@
 
     .edit-btn:hover {
         color: var(--theme-color);
+    }
+
+    .hardcore-mode-text {
+        color: #bd250a;
+        text-shadow: 0 0 20px rgb(174, 43, 26);
+        animation: hardcore-pulse 3s infinite alternate;
+        text-align: center;
+        font-weight: 900;
+        letter-spacing: 2px;
+        margin-top: 10px;
+    }
+
+    @@keyframes hardcore-pulse {
+        0% { text-shadow: 0 0 10px rgb(174, 43, 26); }
+        100% { text-shadow: 0 0 35px rgb(255, 30, 0); }
     }
 
     .edit-mode-container {
@@ -772,24 +844,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-
-        .streak-msg-base {
-            text-align: center;
-            margin-top: 15px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            animation: fade-in 0.5s;
-        }
-
-        .streak-msg-hit {
-            color: #00ff66;
-            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
-        }
-
-        .streak-msg-freeze {
-            color: #009dff;
-            text-shadow: 0 0 10px rgba(0, 157, 255, 0.5);
         }
 
         .prestige-btn {

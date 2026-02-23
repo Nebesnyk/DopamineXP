@@ -26,6 +26,9 @@ public class DopamineTask
         set => _streakFreezePrice = value;
     }
 
+    public bool IsHardcore { get; set; } = true;
+    public double MinutesLoggedToday { get; set; } = 0;
+    
     public DateTime LastLogged { get; set; } = DateTime.MinValue;
     public string DailyStreakMessage { get; set; } = "";
 
