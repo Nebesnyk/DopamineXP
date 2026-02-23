@@ -31,7 +31,7 @@ public class TrackerBrain
     
     private string ToJson()
     {
-        return JsonSerializer.Serialize(this);
+        return JsonSerializer.Serialize(this, new JsonSerializerOptions{WriteIndented = true});
     }
 
     public void SaveToFile()
