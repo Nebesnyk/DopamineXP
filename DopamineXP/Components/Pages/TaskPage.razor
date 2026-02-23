@@ -97,9 +97,9 @@
                 </div>
             </div>
             <div class="prestige-container">
-                @if (activeTask.Level < 5)
+                @if (activeTask.Level < 10)
                 {
-                    <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 5 IN ORDER TO UNLOCK PRESTIGE</div>
+                    <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 10 IN ORDER TO UNLOCK PRESTIGE</div>
                 }
                 else
                 {
@@ -135,7 +135,7 @@
         
         if (activeTask != null)
         {
-            _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 50);
+            _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 20);
         }
     }
 
@@ -191,7 +191,7 @@
         activeTask.XP -= _threshold;
         activeTask.Points += activeTask.Level;
         activeTask.Level++;
-        _threshold = (int)Math.Pow(1.2, activeTask.Level) * 50;
+        _threshold = (int)Math.Pow(1.2, activeTask.Level) * 20;
         
         Brain.OnChange?.Invoke();
         Brain.SaveToFile();
