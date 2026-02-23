@@ -17,22 +17,24 @@
                 <input type="color" class="color-input" @bind="HexColor"/>
             </div>
             
-            <div class="input-container">
+            <div class="input-container hardcore-wrapper">
                 <span style="font-size: 20px; margin-bottom: 5px;">Turn on hardcore?</span>
                 <input type="checkbox" class="hardcore-input" @bind="IsHardcore"/>
             </div>
             
+        </div>
             @if (IsHardcore)
             {
-                <div class="hardcore-warning">WARNING</div>
-                <div class="hardcore-warning-explanation">
-                    Hardcore mode will require you to spend at least 60 minuted
-                    on a task every day. If you don't meet this requirement -
-                    your level, xp, streak and points will be reset (but not cores and shards).
-                    The price of streak freeze will be doubled after each purchase. Good luck (you will need it)
+                <div class="hardcore-warning-container">
+                    <div class="hardcore-warning-title">WARNING</div>
+                    <div class="hardcore-warning-explanation">
+                        Hardcore mode will require you to spend at least 60 minuted
+                        on a task every day. If you don't meet this requirement -
+                        your level, xp, streak and points will be reset (but not cores and shards).
+                        The price of streak freeze will be doubled after each purchase. Good luck (you will need it)
+                    </div>
                 </div>
             }
-        </div>
         
         <div class="create-task-btn" @onclick="CreateTask">CREATE THE TASK!</div>
     </div>
@@ -201,7 +203,7 @@
         100% { transform: translate(0, 0); } 
     }
 
-    .hardcore-warning {
+    .hardcore-warning-title {
         color: #ff0000;
         font-size: 32px;
         font-weight: 900;
@@ -226,6 +228,26 @@
         border-radius: 0 8px 8px 0;
         position: relative;
         overflow: hidden;
+    }
+
+    .hardcore-warning-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .hardcore-wrapper {
+        grid-column: span 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
     
     
@@ -307,12 +329,6 @@
             font-size: 20px; 
             text-align: center;
             padding: 0 10px;
-        }
-
-        .inputs {
-            flex-direction: column; 
-            align-items: center;
-            gap: 20px;
         }
 
         .task-input, .color-input {
