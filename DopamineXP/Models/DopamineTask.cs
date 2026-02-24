@@ -83,6 +83,18 @@ public class DopamineTask
             Stats.Level++;
         }
     }
+
+    public void ApplyPrestige()
+    {
+        Lab.Cores = Stats.Level - 10 + 1;
+        
+        Stats.PrestigeCount++;
+        
+        if (Stats.PrestigeCount == 1)
+            Lab.LastShardUpdate = DateTime.Now;
+        
+        SoftReset();
+    }
 }
 
 public class TaskStats
@@ -142,7 +154,7 @@ public class TaskEconomy
 
 public class TaskLaboratory
 {
-    public int Cores { get; set; } = 0;
+    public int Cores { get; set; } = 0 ;
     public double Shards { get; set; } = 0;
     public double ShardGenerators { get; set; } = 0;
     public DateTime LastShardUpdate { get; set; } = DateTime.Now;

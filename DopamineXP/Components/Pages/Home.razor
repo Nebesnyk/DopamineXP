@@ -9,21 +9,21 @@
         <div class="inputs">
             <div class="input-container">
                 <span style="font-size: 20px; margin-bottom: 5px;">Write a task's name</span>
-                <input type="text" class="task-input" @bind="Name"/>
+                <input type="text" class="task-input" @bind="_name"/>
             </div>
             
             <div class="input-container">
                 <span style="font-size: 20px; margin-bottom: 5px;">Choose the task's color</span>
-                <input type="color" class="color-input" @bind="HexColor"/>
+                <input type="color" class="color-input" @bind="_hexColor"/>
             </div>
             
             <div class="input-container hardcore-wrapper">
                 <span style="font-size: 20px; margin-bottom: 5px;">Turn on hardcore?</span>
-                <input type="checkbox" class="hardcore-input" @bind="IsHardcore"/>
+                <input type="checkbox" class="hardcore-input" @bind="_isHardcore"/>
             </div>
             
         </div>
-            @if (IsHardcore)
+            @if (_isHardcore)
             {
                 <div class="hardcore-warning-container">
                     <div class="hardcore-warning-title">WARNING</div>
@@ -42,21 +42,21 @@
 
 @code {
 
-    private string Name = "";
-    private string HexColor = "#000000";
-    private bool IsHardcore = false;
+    private string _name = "";
+    private string _hexColor = "#000000";
+    private bool _isHardcore = false;
 
     private void CreateTask()
     {
-        if (string.IsNullOrWhiteSpace(Name))
+        if (string.IsNullOrWhiteSpace(_name))
             return;
         
         Brain.AddTask(
-            new DopamineTask { Name = Name.Trim(), HexColor = HexColor, Habit = new TaskHabit{IsHardcore = IsHardcore} });
+            new DopamineTask { Name = _name.Trim(), HexColor = _hexColor, Habit = new TaskHabit{IsHardcore = _isHardcore} });
 
         Brain.SaveToFile();
         
-        Name = "";
+        _name = "";
     }
 }
 
@@ -88,12 +88,6 @@
         border-radius: 15px;
         border: 2px solid white;
         box-shadow: 0 0 20px white;
-        
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-        border-radius: 15px;
-        
     }
     
     .title-field {

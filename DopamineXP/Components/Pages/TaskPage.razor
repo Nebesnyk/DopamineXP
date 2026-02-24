@@ -285,14 +285,7 @@
 
     private void Prestige()
     {
-        activeTask.SoftReset();
-        
-        
-        activeTask.Lab.Cores = activeTask.Stats.Level - 10 + 1;
-        activeTask.Stats.PrestigeCount++;
-        
-        if (activeTask.Stats.PrestigeCount == 1)
-            activeTask.Lab.LastShardUpdate = DateTime.Now;
+        activeTask?.ApplyPrestige();
         
         Brain.SaveToFile();
         
