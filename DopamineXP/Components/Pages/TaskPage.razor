@@ -144,20 +144,13 @@
         {
             CalculateThreshold();
             
-            if (activeTask.Habit.IsHardcore && activeTask.Habit.LastMinutesLoggedResetDateTime < DateTime.Today)
-            {
-                if (activeTask.Habit.MinutesLoggedToday < 60)
-                {
-                    activeTask.SoftReset();
-                    activeTask.Habit.Streak = 0;
-                }
-
-                activeTask.Habit.MinutesLoggedToday = 0;
-                activeTask.Habit.LastMinutesLoggedResetDateTime = DateTime.Today;
-            }
+            activeTask.CheckDailyReset();
 
             if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
                 activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of 60";
+
+            if (_isEditing)
+                _isEditing = !_isEditing;
         }
     }
 
@@ -271,7 +264,7 @@
             
             activeTask.Name = _editName;
             activeTask.HexColor = _editColor;
-            _isEditing = false; //TODO: Add to the onparametersset if _isEditing then _isEditing = !_isEditing
+            _isEditing = false; 
             
             Brain.OnChange?.Invoke(); 
             Brain.SaveToFile();

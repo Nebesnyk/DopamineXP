@@ -47,6 +47,21 @@ public class DopamineTask
         Shop.MultiplierPrice = 3;
         Shop.StreakFreezePrice = 5;
     }
+    
+    public void CheckDailyReset()
+    {
+        if (Habit.IsHardcore && Habit.LastMinutesLoggedResetDateTime < DateTime.Today)
+        {
+            if (Habit.MinutesLoggedToday < 60)
+            {
+                SoftReset();
+                Habit.Streak = 0;
+            }
+
+            Habit.MinutesLoggedToday = 0;
+            Habit.LastMinutesLoggedResetDateTime = DateTime.Today;
+        }
+    }
 }
 
 public class TaskStats
