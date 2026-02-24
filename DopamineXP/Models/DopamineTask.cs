@@ -67,8 +67,8 @@ public class DopamineTask
     {
         Habit.MinutesLoggedToday += minutes;
         
-        double shopBuff = DateTime.Now <= Shop.MultiplierExpiration ? 2.0 : 1.0;
-        double streakBuff = Habit.Streak * 0.1 + 1;
+        double shopBuff = DateTime.Now <= Shop.MultiplierExpiration ? Shop.Multiplier : 1.0;
+        double streakBuff = Habit.Streak * 0.5 + 1;
         double prestigeBuff = Stats.PrestigeCount + 1;
 
         Stats.XP += (int)(2 * minutes * streakBuff) * shopBuff * prestigeBuff;
@@ -79,14 +79,14 @@ public class DopamineTask
         while (Stats.XP >= Stats.Threshold) 
         {
             Stats.XP -= Stats.Threshold;
-            Shop.Points += Stats.Level;
+            Shop.Points += Stats.Level * Lab.SynthesizerMultiplier;
             Stats.Level++;
         }
     }
 
     public void ApplyPrestige()
     {
-        Lab.Cores = Stats.Level - 10 + 1;
+        Lab.Cores += Stats.Level - 10 + 1;
         
         Stats.PrestigeCount++;
         
@@ -94,6 +94,63 @@ public class DopamineTask
             Lab.LastShardUpdate = DateTime.Now;
         
         SoftReset();
+    }
+
+    public string FormatNumber(int number)
+    {
+        if (number < 1000) return number.ToString(); 
+    
+        return number.ToString("0.0e0");
+
+    }
+    
+    public string FormatNumber(double number)
+    {
+        if (number < 1000) return Math.Floor(number).ToString(); 
+    
+        return number.ToString("0.0e0");
+
+    }
+    
+    public void TryBuyOverclocker()
+    {
+        if (Lab.Shards < Lab.OverclockerPrice || Lab.OverclockerLevel == 5) return;
+
+        Lab.Shards -= Lab.OverclockerPrice;
+        Lab.OverclockerPrice *= 10;
+        Lab.OverclockerLevel++;
+        
+        Shop.Multiplier++;
+    }
+    
+    public void TryBuySynthesizer()
+    {
+        if (Lab.Shards < Lab.SynthesizerPrice || Lab.SynthesizerLevel == 4) return;
+
+        Lab.Shards -= Lab.SynthesizerPrice;
+        Lab.SynthesizerPrice *= 10;
+        Lab.SynthesizerLevel++;
+
+        Lab.SynthesizerMultiplier += 1;
+
+    }
+    
+    public void TryBuyResonator()
+    {
+        if (Lab.Shards < Lab.ResonatorPrice || Lab.ResonatorLevel == 5) return;
+
+        Lab.Shards -= Lab.ResonatorPrice;
+        Lab.ResonatorPrice *= 10;
+        Lab.ResonatorLevel++;
+
+        Lab.ResonatorMultiplier += 1;
+    }
+
+    public void TryBuyFountain()
+    {
+        if (Lab.Shards < Lab.FountainPrice || Lab.IsFountainBought) return;
+
+        Lab.IsFountainBought = true;
     }
 }
 
@@ -121,6 +178,7 @@ public class TaskEconomy
     public int Points { get; set; } = 0;
     
     public bool HasFreeze { get; set; } = false;
+    public int Multiplier = 2;
     public DateTime MultiplierExpiration { get; set; } = DateTime.MinValue;
     
     public int MultiplierPrice { get; set; } = 3;
@@ -131,7 +189,7 @@ public class TaskEconomy
         if (Points >= MultiplierPrice)
         {
             Points -= MultiplierPrice;
-            MultiplierPrice *= 2;
+            MultiplierPrice *= Multiplier;
             MultiplierExpiration = DateTime.Now.AddHours(24);
             return true;
         }
@@ -155,8 +213,22 @@ public class TaskEconomy
 public class TaskLaboratory
 {
     public int Cores { get; set; } = 0 ;
-    public double Shards { get; set; } = 0;
-    public double ShardGenerators { get; set; } = 0;
+    public double Shards { get; set; } = 111111110;
+    public int ShardGenerators { get; set; } = 0;
     public DateTime LastShardUpdate { get; set; } = DateTime.Now;
+
+    public int OverclockerPrice { get; set; } = 100;
+    public int SynthesizerPrice { get; set; } = 150;
+    public int ResonatorPrice { get; set; } = 250;
+    public int FountainPrice { get; set; } = 1_000_000;
+    
+    public int OverclockerLevel { get; set; } = 1;
+    public int SynthesizerLevel { get; set; } = 0;
+    public int ResonatorLevel { get; set; } = 0;
+    public bool IsFountainBought { get; set; } = false;
+
+    public int SynthesizerMultiplier = 1;
+    public int ResonatorMultiplier = 1;
+
 
 }

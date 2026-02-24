@@ -28,7 +28,7 @@
                 
                 <div class="resource-container shards-container">
                     <div class="currency-text">SHARDS</div>
-                    <div class="resource-value">@((int)activeTask.Lab.Shards)</div>
+                    <div class="resource-value">@(activeTask.FormatNumber(activeTask.Lab.Shards))</div>
                 </div>
             </div>
             
@@ -36,7 +36,7 @@
                 <div class="shards-generator-container">
                     <div class="generator-text">SHARD GENERATOR</div>
                     <div class="generators-amount-text">You have: @activeTask.Lab.ShardGenerators @(activeTask.Lab.ShardGenerators == 1 ? "generator" : "generators")</div>
-                    <button class="generator-btn" 
+                    <button class="btn generator-btn" 
                             disabled="@(activeTask.Lab.Cores < activeTask.Lab.ShardGenerators + 1)"
                             @onclick="BuySharpGenerator">BUY FOR @(activeTask.Lab.ShardGenerators + 1) @(activeTask.Lab.ShardGenerators + 1 == 1 ? "CORE" : "CORES")</button>
                 </div>
@@ -49,28 +49,36 @@
                     <div class="lab-item">
                         <div class="lab-item-header">THE OVERCLOCKER</div>
                         <div class="lab-item-desc">Permanently upgrades your Point Shop's XP Buff from 2x up to a massive 5x.</div>
-                        <div class="lab-item-level">Level 1/4</div>
-                        <button class="buy-shard-btn">UPGRADE - 10</button>
+                        <div class="lab-item-level">Level @activeTask.Lab.OverclockerLevel/4</div>
+                        <button class="btn buy-shard-btn"
+                                disabled="@(activeTask.Lab.Shards < activeTask.Lab.OverclockerPrice)"
+                                @onclick="BuyOverclocker">UPGRADE: @(activeTask.FormatNumber(activeTask.Lab.OverclockerPrice)) SHARDS</button>
                     </div>
 
                     <div class="lab-item">
                         <div class="lab-item-header">POINT SYNTHESIZER</div>
                         <div class="lab-item-desc">Multiplies the amount of @activeTask.Name.Substring(0, 1)P you earn every time you Level Up.</div>
-                        <div class="lab-item-level">Level 0/5</div>
-                        <button class="buy-shard-btn">UPGRADE - 15</button>
+                        <div class="lab-item-level">Level @activeTask.Lab.SynthesizerLevel/5</div>
+                        <button class="btn buy-shard-btn" 
+                                disabled="@(activeTask.Lab.Shards < activeTask.Lab.SynthesizerPrice)"
+                                @onclick="BuySynthesizer">UPGRADE: @(activeTask.FormatNumber(activeTask.Lab.SynthesizerPrice)) SHARDS</button>
                     </div>
 
                     <div class="lab-item">
                         <div class="lab-item-header">CORE RESONATOR</div>
                         <div class="lab-item-desc">Overcharges your Cores. Speeds up the time it takes to generate a Shard.</div>
-                        <div class="lab-item-level">Level 0/5</div>
-                        <button class="buy-shard-btn">UPGRADE - 25</button>
+                        <div class="lab-item-level">Level @activeTask.Lab.ResonatorLevel/5</div>
+                        <button class="btn buy-shard-btn"
+                                disabled="@(activeTask.Lab.Shards < activeTask.Lab.ResonatorPrice)"
+                                @onclick="BuyResonator">UPGRADE: @(activeTask.FormatNumber(activeTask.Lab.ResonatorPrice)) SHARDS</button>
                     </div>
 
                     <div class="lab-item fountain-item">
                         <div class="lab-item-header fountain-text">THE FOUNTAINS</div>
                         <div class="lab-item-desc">Pour your shards and @activeTask.Name.Substring(0, 1)P into fountains to unlock new powers...</div>
-                        <button class="buy-shard-btn fountain-btn">BUY</button>
+                        <button class="btn buy-shard-btn fountain-btn"
+                                disabled="@(activeTask.Lab.Shards < activeTask.Lab.FountainPrice)"
+                                @onclick="BuyFountain">BUY: 1e6 shards</button>
                     </div>
                 </div>
             </div>
@@ -114,7 +122,7 @@
             if (secondsAway > 0)
             {
                 // Math: 10 seconds away * 5 generators = 50 shards.
-                activeTask.Lab.Shards += (secondsAway * activeTask.Lab.ShardGenerators);
+                activeTask.Lab.Shards += (secondsAway * activeTask.Lab.ShardGenerators * activeTask.Lab.ResonatorMultiplier / 10.0);
                 activeTask.Lab.LastShardUpdate = activeTask.Lab.LastShardUpdate.AddSeconds(secondsAway);
                 Brain.SaveToFile();
             }
@@ -125,10 +133,8 @@
     {
         if (activeTask != null && activeTask.Stats.PrestigeCount > 0)
         {
-            activeTask.Lab.Shards += activeTask.Lab.ShardGenerators / 10.0;
+            activeTask.Lab.Shards += activeTask.Lab.ShardGenerators * activeTask.Lab.ResonatorMultiplier / 10.0;
             activeTask.Lab.LastShardUpdate = DateTime.Now;
-            
-            Brain.SaveToFile();
             
             InvokeAsync(StateHasChanged); 
         }
@@ -155,7 +161,37 @@
                 _shardTimer.Start();
             }
         }
+        Brain.OnChange?.Invoke();
+        Brain.SaveToFile();
+
     }
+        private void BuyOverclocker()
+        {
+            activeTask.TryBuyOverclocker();
+            Brain.OnChange?.Invoke();
+            Brain.SaveToFile();
+        }
+
+        private void BuySynthesizer()
+        {
+            activeTask.TryBuySynthesizer();
+            Brain.OnChange?.Invoke();
+            Brain.SaveToFile();
+        }
+
+        private void BuyResonator()
+        {
+            activeTask.TryBuyResonator();
+            Brain.OnChange?.Invoke();
+            Brain.SaveToFile();
+        }
+
+        private void BuyFountain()
+        {
+            activeTask.TryBuyFountain();
+            Brain.OnChange?.Invoke();
+            Brain.SaveToFile();
+        }
 }
 
 <style>
@@ -273,7 +309,7 @@
         color: #000;
     }
 
-    .generator-btn:disabled {
+    .btn:disabled {
         border-color: #555555;
         color: #555555;
         cursor: not-allowed;
@@ -380,7 +416,7 @@
         transition: all 0.2s ease;
     }
 
-    .buy-shard-btn:hover {
+    .buy-shard-btn:hover:not(:disabled) {
         background: var(--theme-color);
         color: #fff;
         box-shadow: 0 0 15px var(--theme-color);
@@ -407,7 +443,7 @@
         border-color: #00d4ff;
     }
 
-    .fountain-btn:hover {
+    .fountain-btn:hover:not(:disabled) {
         background: #00d4ff;
         color: #000;
         box-shadow: 0 0 20px #00d4ff;
