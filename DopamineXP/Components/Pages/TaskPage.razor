@@ -40,11 +40,11 @@
                 <div class="level-container">
                     <div class="level-xp-text">
                         <span class="level-text">Level @activeTask.Stats.Level</span>
-                        <span class="xp-text">@((int)activeTask.Stats.XP)/@((int)_threshold)XP</span>
+                        <span class="xp-text">@((int)activeTask.Stats.XP)/@((int)activeTask.Stats.Threshold)XP</span>
                     </div>
                     
                     <div class="progress-track-bar">
-                        <div class="progress-fill-bar" style="width: @(activeTask.Stats.XP < _threshold ? (activeTask.Stats.XP / _threshold * 100) : 100)%"></div>
+                        <div class="progress-fill-bar" style="width: @(activeTask.Stats.XP < activeTask.Stats.Threshold ? (activeTask.Stats.XP / activeTask.Stats.Threshold * 100) : 100)%"></div>
                     </div>
                     
                     <div class="level-input-buttons">
@@ -133,7 +133,6 @@
 
     private DopamineTask? activeTask;
     private int? _minutesSpent;
-    private double _threshold = 100;
 
     protected override void OnParametersSet()
     {
@@ -142,8 +141,6 @@
         
         if (activeTask != null)
         {
-            CalculateThreshold();
-            
             activeTask.CheckDailyReset();
 
             if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
@@ -151,6 +148,8 @@
 
             if (_isEditing)
                 _isEditing = !_isEditing;
+
+            _minutesSpent = null;
         }
     }
 
@@ -158,13 +157,7 @@
     {
         if (_minutesSpent == null || activeTask == null) return;
 
-        activeTask.Habit.MinutesLoggedToday += _minutesSpent.Value;
-        
-        double shopBuff = 1.0;
-        if (DateTime.Now <= activeTask.Shop.MultiplierExpiration)
-            shopBuff = 2.0;
-        
-        activeTask.Stats.XP += (int)(2 * _minutesSpent.Value * (activeTask.Habit.Streak * 0.1 + 1)) * shopBuff * (activeTask.Stats.PrestigeCount + 1);
+        activeTask.LogMinutes(_minutesSpent.Value);
         _minutesSpent = null;
 
         EvaluateStreak();
@@ -210,20 +203,16 @@
 
     private string CanLevelUp()
     {
-        if (activeTask != null && activeTask.Stats.XP >= _threshold)
+        if (activeTask != null && activeTask.Stats.XP >= activeTask.Stats.Threshold)
             return "is-ready";
         return "";
     }
 
     private void LevelUp()
     {
-        if (activeTask == null || activeTask.Stats.XP < _threshold) return;
+        if (activeTask == null || activeTask.Stats.XP < activeTask.Stats.Threshold) return;
         
-        activeTask.Stats.XP -= _threshold;
-        activeTask.Shop.Points += activeTask.Stats.Level;
-        activeTask.Stats.Level++;
-
-        CalculateThreshold();
+        activeTask.LevelUp();
         
         Brain.OnChange?.Invoke();
         Brain.SaveToFile();
@@ -278,12 +267,8 @@
 
     private void BuyMultiplier()
     {
-        if (activeTask != null && activeTask.Shop.Points >= activeTask.Shop.MultiplierPrice)
+        if (activeTask.Shop.CanBuyMultiplier()) 
         {
-            activeTask.Shop.Points -= activeTask.Shop.MultiplierPrice;
-            activeTask.Shop.MultiplierPrice *= 2;
-            activeTask.Shop.MultiplierExpiration = DateTime.Now.AddHours(24);
-            
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
         }
@@ -291,12 +276,8 @@
 
     private void BuyStreakFreeze()
     {
-        if (activeTask != null && activeTask.Shop.Points >= activeTask.Shop.StreakFreezePrice)
+        if (activeTask.Shop.CanBuyStreakFreeze())
         {
-            activeTask.Shop.Points -= activeTask.Shop.StreakFreezePrice;
-            activeTask.Shop.StreakFreezePrice *= 2;
-            activeTask.Shop.HasFreeze = true;
-            
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
         }
@@ -318,10 +299,7 @@
         NavManager.NavigateTo($"/task/cores/{System.Net.WebUtility.UrlEncode(activeTask.Name)}");
     }
 
-    private void CalculateThreshold()
-    {
-        _threshold = (int)(Math.Pow(1.2, activeTask.Stats.Level) * 20);
-    }
+    
 }
 
 <style>

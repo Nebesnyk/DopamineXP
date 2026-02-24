@@ -41,7 +41,7 @@ public class DopamineTask
     public void SoftReset()
     {
         Stats.Level = 1;
-        Stats.Level = 0;
+        Stats.XP = 0;
         
         Shop.Points = 0;
         Shop.MultiplierPrice = 3;
@@ -62,13 +62,35 @@ public class DopamineTask
             Habit.LastMinutesLoggedResetDateTime = DateTime.Today;
         }
     }
+    
+    public void LogMinutes(int minutes)
+    {
+        Habit.MinutesLoggedToday += minutes;
+        
+        double shopBuff = DateTime.Now <= Shop.MultiplierExpiration ? 2.0 : 1.0;
+        double streakBuff = Habit.Streak * 0.1 + 1;
+        double prestigeBuff = Stats.PrestigeCount + 1;
+
+        Stats.XP += (int)(2 * minutes * streakBuff) * shopBuff * prestigeBuff;
+    }
+    
+    public void LevelUp()
+    {
+        while (Stats.XP >= Stats.Threshold) 
+        {
+            Stats.XP -= Stats.Threshold;
+            Shop.Points += Stats.Level;
+            Stats.Level++;
+        }
+    }
 }
 
 public class TaskStats
 {
     public double XP { get; set; } = 0;
     public int Level { get; set; } = 1;
-    public int PrestigeCount { get; set; } = 0; 
+    public int PrestigeCount { get; set; } = 0;
+    public int Threshold => (int)(Math.Pow(1.2, Level) * 20);
 }
 
 public class TaskHabit
@@ -91,6 +113,31 @@ public class TaskEconomy
     
     public int MultiplierPrice { get; set; } = 3;
     public int StreakFreezePrice { get; set; } = 5;
+    
+    public bool CanBuyMultiplier()
+    {
+        if (Points >= MultiplierPrice)
+        {
+            Points -= MultiplierPrice;
+            MultiplierPrice *= 2;
+            MultiplierExpiration = DateTime.Now.AddHours(24);
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool CanBuyStreakFreeze()
+    {
+        if (Points >= StreakFreezePrice)
+        {
+            Points -= StreakFreezePrice;
+            StreakFreezePrice *= 2;
+            HasFreeze = true;
+            return true;
+        }
+        return false;
+    }
 }
 
 public class TaskLaboratory
