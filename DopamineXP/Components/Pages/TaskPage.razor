@@ -19,7 +19,7 @@
                 {
                     <h1 class="task-title">@activeTask.Name.ToUpper()</h1>
                     <div class="edit-btn" @onclick="ToggleEdit">EDIT SETTINGS</div>
-                    if (activeTask.IsHardcore)
+                    if (activeTask.Habit.IsHardcore)
                     {
                         <div class="hardcore-mode-text">HARDCORE MODE IS ON</div>
                     }
@@ -39,12 +39,12 @@
             <div class="task-content">
                 <div class="level-container">
                     <div class="level-xp-text">
-                        <span class="level-text">Level @activeTask.Level</span>
-                        <span class="xp-text">@((int)activeTask.XP)/@((int)_threshold)XP</span>
+                        <span class="level-text">Level @activeTask.Stats.Level</span>
+                        <span class="xp-text">@((int)activeTask.Stats.XP)/@((int)_threshold)XP</span>
                     </div>
                     
                     <div class="progress-track-bar">
-                        <div class="progress-fill-bar" style="width: @(activeTask.XP < _threshold ? (activeTask.XP / _threshold * 100) : 100)%"></div>
+                        <div class="progress-fill-bar" style="width: @(activeTask.Stats.XP < _threshold ? (activeTask.Stats.XP / _threshold * 100) : 100)%"></div>
                     </div>
                     
                     <div class="level-input-buttons">
@@ -53,28 +53,28 @@
                         <div class="level-up-btn @CanLevelUp()" @onclick="LevelUp">LEVEL UP!</div>
                     </div>
                     
-                    @if (!string.IsNullOrEmpty(activeTask.DailyStreakMessage) && (activeTask.LastStreakEarnedDate == DateTime.Today || activeTask.IsHardcore))
+                    @if (!string.IsNullOrEmpty(activeTask.Habit.DailyStreakMessage) && (activeTask.Habit.LastStreakEarnedDateTime == DateTime.Today || activeTask.Habit.IsHardcore))
                     {
-                        string colorClass = activeTask.DailyStreakMessage.Contains("FREEZE") ? "streak-msg-freeze" : "streak-msg-hit";
-                        if (activeTask.IsHardcore && activeTask.MinutesLoggedToday < 60)
+                        string colorClass = activeTask.Habit.DailyStreakMessage.Contains("FREEZE") ? "streak-msg-freeze" : "streak-msg-hit";
+                        if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
                             colorClass = "streak-msg-hardcore";
                         <div class="streak-msg-base @colorClass">
-                            @activeTask.DailyStreakMessage
+                            @activeTask.Habit.DailyStreakMessage
                         </div>
                         
                     }
                 </div>
                 
                 <div class="points-streak">
-                    <span class="points-text">@activeTask.Points @activeTask.Name.Substring(0, 1)P</span>
-                    <span class="streak-text">Streak: @activeTask.Streak days</span>
+                    <span class="points-text">@activeTask.Shop.Points @activeTask.Name.Substring(0, 1)P</span>
+                    <span class="streak-text">Streak: @activeTask.Habit.Streak days</span>
                 </div>
                 
             </div>
             <div class="level-text" style="font-weight: 600; font-size: 36px; text-align: center; margin-top: 20px">SHOP</div>
             <div class="shop-field">
                 @{
-                    bool isBuffActive = DateTime.Now <= activeTask.MultiplierExpiration;
+                    bool isBuffActive = DateTime.Now <= activeTask.Shop.MultiplierExpiration;
                 }
 
                 <div class="shop-style xp-boost-field"
@@ -86,40 +86,36 @@
                     </div>
     
                     <button class="buy-btn xp-buy"
-                            disabled="@(isBuffActive || activeTask.Points < activeTask.MultiplierPrice)"
+                            disabled="@(isBuffActive || activeTask.Shop.Points < activeTask.Shop.MultiplierPrice)"
                             @onclick="BuyMultiplier">
-                        @(isBuffActive ? "ACTIVE" : $"{activeTask.MultiplierPrice} {activeTask.Name.Substring(0, 1)}P")
+                        @(isBuffActive ? "ACTIVE" : $"{activeTask.Shop.MultiplierPrice} {activeTask.Name.Substring(0, 1)}P")
                     </button>
                 </div>
 
                 <div class="shop-style streak-shield-field"
-                     style="@(activeTask.HasStreakFreeze ? "box-shadow: 0 8px 25px rgba(0, 157, 255, 0.2); border-color: rgba(0, 157, 255, 0.5);" : "" )">
+                     style="@(activeTask.Shop.HasFreeze ? "box-shadow: 0 8px 25px rgba(0, 157, 255, 0.2); border-color: rgba(0, 157, 255, 0.5);" : "" )">
                     <div class="shop-item-title">Streak Freeze</div>
                     <div class="shop-item-desc">Protects streak if you miss a day</div>
                     <button class="buy-btn shield-buy"
-                            disabled="@(activeTask.HasStreakFreeze || activeTask.Points < activeTask.StreakFreezePrice)"
+                            disabled="@(activeTask.Shop.HasFreeze || activeTask.Shop.Points < activeTask.Shop.StreakFreezePrice)"
                             @onclick="BuyStreakFreeze">
-                        @(activeTask.HasStreakFreeze ? "ACTIVE" : $"{activeTask.StreakFreezePrice} {activeTask.Name.Substring(0, 1)}P")
+                        @(activeTask.Shop.HasFreeze ? "ACTIVE" : $"{activeTask.Shop.StreakFreezePrice} {activeTask.Name.Substring(0, 1)}P")
                     </button>
                 </div>
             </div>
             <div class="prestige-container">
-                @if (activeTask.Level < 10)
+                @if (activeTask.Stats.Level < 10)
                 {
                     <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 10 IN ORDER TO UNLOCK PRESTIGE</div>
                 }
                 else
                 {
-                    int cores;
-                    if (activeTask.Level < 15)
-                        cores = 1;
-                    else
-                        cores = activeTask.Level / 5 - 1;
+                    int cores = activeTask.Stats.Level - 10;
                     <div class="prestige-btn" @onclick="Prestige">PRESTIGE AND GET @cores @activeTask.Name.ToUpper() @(cores == 1 ? "CORE" : "CORES")</div>
                 }
             </div>
             
-            @if (activeTask.AmountOfPrestiges > 0)
+            @if (activeTask.Stats.PrestigeCount > 0)
             {
                 <a href=@($"/task/cores/{System.Net.WebUtility.UrlEncode(activeTask.Name)}") class="to-cores-page-btn">GO TO THE CORES LABORATORY</a>
             }
@@ -146,26 +142,22 @@
         
         if (activeTask != null)
         {
-            _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 20);
+            CalculateThreshold();
             
-            if (activeTask.IsHardcore && activeTask.LastResetDate < DateTime.Today)
+            if (activeTask.Habit.IsHardcore && activeTask.Habit.LastMinutesLoggedResetDateTime < DateTime.Today)
             {
-                if (activeTask.MinutesLoggedToday < 60)
+                if (activeTask.Habit.MinutesLoggedToday < 60)
                 {
-                    activeTask.Level = 1;
-                    activeTask.XP = 0;
-                    activeTask.Streak = 0;
-                    activeTask.Points = 0;
-                    activeTask.MultiplierPrice = 3;
-                    activeTask.StreakFreezePrice = 5;
+                    activeTask.SoftReset();
+                    activeTask.Habit.Streak = 0;
                 }
 
-                activeTask.MinutesLoggedToday = 0;
-                activeTask.LastResetDate = DateTime.Today;
+                activeTask.Habit.MinutesLoggedToday = 0;
+                activeTask.Habit.LastMinutesLoggedResetDateTime = DateTime.Today;
             }
 
-            if (activeTask.IsHardcore && activeTask.MinutesLoggedToday < 60)
-                activeTask.DailyStreakMessage = $"You have spent {activeTask.MinutesLoggedToday} minutes out of 60";
+            if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
+                activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of 60";
         }
     }
 
@@ -173,68 +165,72 @@
     {
         if (_minutesSpent == null || activeTask == null) return;
 
-        activeTask.MinutesLoggedToday += _minutesSpent.Value;
+        activeTask.Habit.MinutesLoggedToday += _minutesSpent.Value;
         
         double shopBuff = 1.0;
-        if (DateTime.Now <= activeTask.MultiplierExpiration)
+        if (DateTime.Now <= activeTask.Shop.MultiplierExpiration)
             shopBuff = 2.0;
         
-        activeTask.XP += (int)(2 * _minutesSpent.Value * (activeTask.Streak * 0.1 + 1)) * shopBuff * (activeTask.AmountOfPrestiges + 1);
+        activeTask.Stats.XP += (int)(2 * _minutesSpent.Value * (activeTask.Habit.Streak * 0.1 + 1)) * shopBuff * (activeTask.Stats.PrestigeCount + 1);
         _minutesSpent = null;
 
-        DateTime today = DateTime.Today;
-
-        if (activeTask.LastStreakEarnedDate < today)
-        {
-            if (!activeTask.IsHardcore || activeTask.MinutesLoggedToday >= 60)
-            {
-                if (activeTask.LastStreakEarnedDate == today.AddDays(-1))
-                {
-                    activeTask.Streak++;
-                    activeTask.DailyStreakMessage = $"STREAK HIT! {activeTask.Streak} DAYS!";
-                }
-                else if (activeTask.LastStreakEarnedDate == today.AddDays(-2) && activeTask.HasStreakFreeze)
-                {
-                    activeTask.HasStreakFreeze = false;
-                    activeTask.Streak++; 
-                    activeTask.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Streak} DAYS!";
-                }
-                else
-                {
-                    activeTask.Streak = 1;
-                    activeTask.DailyStreakMessage = "STREAK STARTED! DAY 1!";
-                }
-                activeTask.LastStreakEarnedDate = today;
-            }
-            else
-            {
-                activeTask.DailyStreakMessage = $"You have spent {activeTask.MinutesLoggedToday} minutes out of 60";
-            }
-            
-            
-        }
-        
-        
+        EvaluateStreak();
         
         Brain.OnChange?.Invoke(); 
         Brain.SaveToFile();
     }
 
+    private void EvaluateStreak()
+    {
+        DateTime today = DateTime.Today;
+        
+        if (activeTask.Habit.LastStreakEarnedDateTime < today)
+        {
+            if (!activeTask.Habit.IsHardcore || activeTask.Habit.MinutesLoggedToday >= 60)
+            {
+                if (activeTask.Habit.LastStreakEarnedDateTime == today.AddDays(-1))
+                {
+                    activeTask.Habit.Streak++;
+                    activeTask.Habit.DailyStreakMessage = $"STREAK HIT! {activeTask.Habit.Streak} DAYS!";
+                }
+                else if (activeTask.Habit.LastStreakEarnedDateTime == today.AddDays(-2) && activeTask.Shop.HasFreeze)
+                {
+                    activeTask.Shop.HasFreeze = false;
+                    activeTask.Habit.Streak++; 
+                    activeTask.Habit.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Habit.Streak} DAYS!";
+                }
+                else
+                {
+                    activeTask.Habit.Streak = 1;
+                    activeTask.Habit.DailyStreakMessage = "STREAK STARTED! DAY 1!";
+                }
+                activeTask.Habit.LastStreakEarnedDateTime = today;
+            }
+            else
+            {
+                activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of 60";
+            }
+            
+            
+        }
+    }
+
     private string CanLevelUp()
     {
-        if (activeTask != null && activeTask.XP >= _threshold)
+        if (activeTask != null && activeTask.Stats.XP >= _threshold)
             return "is-ready";
         return "";
     }
 
     private void LevelUp()
     {
-        if (activeTask == null || activeTask.XP < _threshold) return;
+        if (activeTask == null || activeTask.Stats.XP < _threshold) return;
         
-        activeTask.XP -= _threshold;
-        activeTask.Points += activeTask.Level;
-        activeTask.Level++;
-        _threshold = (int)(Math.Pow(1.2, activeTask.Level) * 20);
+        activeTask.Stats.XP -= _threshold;
+        activeTask.Shop.Points += activeTask.Stats.Level;
+        activeTask.Stats.Level++;
+
+        CalculateThreshold();
         
         Brain.OnChange?.Invoke();
         Brain.SaveToFile();
@@ -275,7 +271,7 @@
             
             activeTask.Name = _editName;
             activeTask.HexColor = _editColor;
-            _isEditing = false;
+            _isEditing = false; //TODO: Add to the onparametersset if _isEditing then _isEditing = !_isEditing
             
             Brain.OnChange?.Invoke(); 
             Brain.SaveToFile();
@@ -289,11 +285,11 @@
 
     private void BuyMultiplier()
     {
-        if (activeTask != null && activeTask.Points >= activeTask.MultiplierPrice)
+        if (activeTask != null && activeTask.Shop.Points >= activeTask.Shop.MultiplierPrice)
         {
-            activeTask.Points -= activeTask.MultiplierPrice;
-            activeTask.MultiplierPrice *= 2;
-            activeTask.MultiplierExpiration = DateTime.Now.AddHours(24);
+            activeTask.Shop.Points -= activeTask.Shop.MultiplierPrice;
+            activeTask.Shop.MultiplierPrice *= 2;
+            activeTask.Shop.MultiplierExpiration = DateTime.Now.AddHours(24);
             
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
@@ -302,11 +298,11 @@
 
     private void BuyStreakFreeze()
     {
-        if (activeTask != null && activeTask.Points >= activeTask.StreakFreezePrice)
+        if (activeTask != null && activeTask.Shop.Points >= activeTask.Shop.StreakFreezePrice)
         {
-            activeTask.Points -= activeTask.StreakFreezePrice;
-            activeTask.StreakFreezePrice *= 2;
-            activeTask.HasStreakFreeze = true;
+            activeTask.Shop.Points -= activeTask.Shop.StreakFreezePrice;
+            activeTask.Shop.StreakFreezePrice *= 2;
+            activeTask.Shop.HasFreeze = true;
             
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
@@ -315,16 +311,23 @@
 
     private void Prestige()
     {
-        activeTask.Cores = (activeTask.Level < 15) ? 1 : activeTask.Level / 5;
-        activeTask.Level = 0;
-        activeTask.XP = 0;
-        activeTask.MultiplierPrice = 3;
-        activeTask.StreakFreezePrice = 5;
-        activeTask.AmountOfPrestiges++;
-        activeTask.LastShardUpdate = DateTime.Now;
+        activeTask.SoftReset();
+        
+        
+        activeTask.Lab.Cores = activeTask.Stats.Level - 10 + 1;
+        activeTask.Stats.PrestigeCount++;
+        
+        if (activeTask.Stats.PrestigeCount == 1)
+            activeTask.Lab.LastShardUpdate = DateTime.Now;
+        
         Brain.SaveToFile();
         
         NavManager.NavigateTo($"/task/cores/{System.Net.WebUtility.UrlEncode(activeTask.Name)}");
+    }
+
+    private void CalculateThreshold()
+    {
+        _threshold = (int)(Math.Pow(1.2, activeTask.Stats.Level) * 20);
     }
 }
 

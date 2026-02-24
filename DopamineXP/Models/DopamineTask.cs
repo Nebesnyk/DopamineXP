@@ -5,42 +5,10 @@ public class DopamineTask
     public string Name { get; set; } = "New Task";
     public string HexColor { get; set; } = "#009dff";
 
-    public double XP { get; set; } = 0;
-    public int Level { get; set; } = 1;
-    public int Points { get; set; } = 0;
-    public int Streak { get; set; } = 0;
-    public DateTime MultiplierExpiration { get; set; } = DateTime.MinValue;
-    public bool HasStreakFreeze { get; set; } = false;
-    private int _multiplierPrice = 3;
-    private int _streakFreezePrice = 5;
-    
-    public int MultiplierPrice
-    {
-        get => _multiplierPrice == 0 ? 3 : _multiplierPrice; 
-        set => _multiplierPrice = value;
-    }
-
-    public int StreakFreezePrice
-    {
-        get => _streakFreezePrice == 0 ? 5 : _streakFreezePrice;
-        set => _streakFreezePrice = value;
-    }
-
-    public bool IsHardcore { get; set; } = true;
-    public double MinutesLoggedToday { get; set; } = 0;
-    
-    public DateTime LastStreakEarnedDate { get; set; } = DateTime.MinValue;
-    public DateTime LastResetDate { get; set; } = DateTime.Today;
-    
-    public string DailyStreakMessage { get; set; } = "";
-
-    public int Cores { get; set; } = 0;
-    public int AmountOfPrestiges { get; set; } = 0;
-    
-    public double Shards { get; set; } = 0;
-    public DateTime LastShardUpdate { get; set; } = DateTime.Now;
-
-    public double FirstGeneratorsAmount { get; set; } = 0;
+    public TaskStats Stats { get; set; } = new();
+    public TaskHabit Habit { get; set; } = new();
+    public TaskEconomy Shop { get; set; } = new();
+    public TaskLaboratory Lab { get; set; } = new();
     
     
     public string GetRgba(double alpha)
@@ -69,4 +37,52 @@ public class DopamineTask
         // "x2" tells C# to convert the integer back into a 2-digit lowercase Hex string
         return $"#{darkR:x2}{darkG:x2}{darkB:x2}";
     }
+
+    public void SoftReset()
+    {
+        Stats.Level = 1;
+        Stats.Level = 0;
+        
+        Shop.Points = 0;
+        Shop.MultiplierPrice = 3;
+        Shop.StreakFreezePrice = 5;
+    }
+}
+
+public class TaskStats
+{
+    public double XP { get; set; } = 0;
+    public int Level { get; set; } = 1;
+    public int PrestigeCount { get; set; } = 0; 
+}
+
+public class TaskHabit
+{
+    public bool IsHardcore { get; set; } = true;
+    public int Streak { get; set; } = 0;
+    public double MinutesLoggedToday { get; set; } = 0;
+    public string DailyStreakMessage { get; set; } = "";
+    
+    public DateTime LastStreakEarnedDateTime { get; set; } = DateTime.MinValue;
+    public DateTime LastMinutesLoggedResetDateTime { get; set; } = DateTime.Today;
+}
+
+public class TaskEconomy
+{
+    public int Points { get; set; } = 0;
+    
+    public bool HasFreeze { get; set; } = false;
+    public DateTime MultiplierExpiration { get; set; } = DateTime.MinValue;
+    
+    public int MultiplierPrice { get; set; } = 3;
+    public int StreakFreezePrice { get; set; } = 5;
+}
+
+public class TaskLaboratory
+{
+    public int Cores { get; set; } = 0;
+    public double Shards { get; set; } = 0;
+    public double ShardGenerators { get; set; } = 0;
+    public DateTime LastShardUpdate { get; set; } = DateTime.Now;
+
 }

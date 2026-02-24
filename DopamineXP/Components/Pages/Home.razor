@@ -52,7 +52,7 @@
             return;
         
         Brain.AddTask(
-            new DopamineTask { Name = Name.Trim(), HexColor = HexColor, IsHardcore = IsHardcore});
+            new DopamineTask { Name = Name.Trim(), HexColor = HexColor, Habit = new TaskHabit{IsHardcore = IsHardcore} });
 
         Brain.SaveToFile();
         

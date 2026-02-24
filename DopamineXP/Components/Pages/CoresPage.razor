@@ -18,27 +18,61 @@
             <div class="currencies-container">
                 <div class="resource-container cores-container">
                     <div class="currency-text">CORES</div>
-                    <div class="resource-value">@activeTask.Cores</div>
+                    <div class="resource-value">@activeTask.Lab.Cores</div>
                 </div>
                 
                 <div class="resource-container prestiges-container">
                     <div class="currency-text">PRESTIGES</div>
-                    <div class="resource-value">@(activeTask.AmountOfPrestiges)</div>
+                    <div class="resource-value">@(activeTask.Stats.PrestigeCount)</div>
                 </div>
                 
                 <div class="resource-container shards-container">
                     <div class="currency-text">SHARDS</div>
-                    <div class="resource-value">@((int)activeTask.Shards)</div>
+                    <div class="resource-value">@((int)activeTask.Lab.Shards)</div>
                 </div>
             </div>
             
-            <div class="generators-container"></div>
-            <div class="shards-generator-container first-shards-generator-container">
-                <div class="first-generator-text">FIRST SHARD GENERATOR</div>
-                <div class="first-generators-amount-text">You have: @activeTask.FirstGeneratorsAmount @(activeTask.FirstGeneratorsAmount == 1 ? "generator" : "generators")</div>
-                <button class="first-generator-btn" 
-                        disabled="@(activeTask.Cores < activeTask.FirstGeneratorsAmount + 1)"
-                        @onclick="BuyFirstGenerator">BUY FOR @(activeTask.FirstGeneratorsAmount + 1) @(activeTask.Cores == 1 ? "CORE" : "CORES")</button>
+            <div class="generators-container">
+                <div class="shards-generator-container">
+                    <div class="generator-text">SHARD GENERATOR</div>
+                    <div class="generators-amount-text">You have: @activeTask.Lab.ShardGenerators @(activeTask.Lab.ShardGenerators == 1 ? "generator" : "generators")</div>
+                    <button class="generator-btn" 
+                            disabled="@(activeTask.Lab.Cores < activeTask.Lab.ShardGenerators + 1)"
+                            @onclick="BuySharpGenerator">BUY FOR @(activeTask.Lab.ShardGenerators + 1) @(activeTask.Lab.ShardGenerators + 1 == 1 ? "CORE" : "CORES")</button>
+                </div>
+            </div>
+            
+            <div class="laboratory-shop-container">
+                <div class="laboratory-shop-title">LABORATORY SHOP</div>
+                
+                <div class="lab-grid">
+                    <div class="lab-item">
+                        <div class="lab-item-header">THE OVERCLOCKER</div>
+                        <div class="lab-item-desc">Permanently upgrades your Point Shop's XP Buff from 2x up to a massive 5x.</div>
+                        <div class="lab-item-level">Level 1/4</div>
+                        <button class="buy-shard-btn">UPGRADE - 10</button>
+                    </div>
+
+                    <div class="lab-item">
+                        <div class="lab-item-header">POINT SYNTHESIZER</div>
+                        <div class="lab-item-desc">Multiplies the amount of @activeTask.Name.Substring(0, 1)P you earn every time you Level Up.</div>
+                        <div class="lab-item-level">Level 0/5</div>
+                        <button class="buy-shard-btn">UPGRADE - 15</button>
+                    </div>
+
+                    <div class="lab-item">
+                        <div class="lab-item-header">CORE RESONATOR</div>
+                        <div class="lab-item-desc">Overcharges your Cores. Speeds up the time it takes to generate a Shard.</div>
+                        <div class="lab-item-level">Level 0/5</div>
+                        <button class="buy-shard-btn">UPGRADE - 25</button>
+                    </div>
+
+                    <div class="lab-item fountain-item">
+                        <div class="lab-item-header fountain-text">THE FOUNTAINS</div>
+                        <div class="lab-item-desc">Pour your shards and @activeTask.Name.Substring(0, 1)P into fountains to unlock new powers...</div>
+                        <button class="buy-shard-btn fountain-btn">BUY</button>
+                    </div>
+                </div>
             </div>
         </div>
     }
@@ -56,7 +90,7 @@
         string decodedName = System.Net.WebUtility.UrlDecode(TaskName);
         activeTask = Brain.CustomTasks.FirstOrDefault(t => t.Name.Equals(decodedName, StringComparison.OrdinalIgnoreCase));
         
-        if (activeTask != null && activeTask.FirstGeneratorsAmount > 0)
+        if (activeTask != null && activeTask.Lab.ShardGenerators > 0)
         {
             CalculateOfflineShards();
 
@@ -72,16 +106,16 @@
     private void CalculateOfflineShards()
     {
         // Only generate Shards if they actually have extracted a Core
-        if (activeTask.AmountOfPrestiges > 0)
+        if (activeTask.Stats.PrestigeCount > 0)
         {
-            TimeSpan timeAway = DateTime.Now - activeTask.LastShardUpdate;
+            TimeSpan timeAway = DateTime.Now - activeTask.Lab.LastShardUpdate;
             int secondsAway = (int)timeAway.TotalSeconds;
             
             if (secondsAway > 0)
             {
                 // Math: 10 seconds away * 5 generators = 50 shards.
-                activeTask.Shards += (secondsAway * activeTask.FirstGeneratorsAmount);
-                activeTask.LastShardUpdate = activeTask.LastShardUpdate.AddSeconds(secondsAway);
+                activeTask.Lab.Shards += (secondsAway * activeTask.Lab.ShardGenerators);
+                activeTask.Lab.LastShardUpdate = activeTask.Lab.LastShardUpdate.AddSeconds(secondsAway);
                 Brain.SaveToFile();
             }
         }
@@ -89,10 +123,10 @@
 
     private void GenerateShardLive(object? sender, ElapsedEventArgs e)
     {
-        if (activeTask != null && activeTask.AmountOfPrestiges > 0)
+        if (activeTask != null && activeTask.Stats.PrestigeCount > 0)
         {
-            activeTask.Shards += activeTask.FirstGeneratorsAmount / 10.0;
-            activeTask.LastShardUpdate = DateTime.Now;
+            activeTask.Lab.Shards += activeTask.Lab.ShardGenerators / 10.0;
+            activeTask.Lab.LastShardUpdate = DateTime.Now;
             
             Brain.SaveToFile();
             
@@ -105,14 +139,14 @@
         _shardTimer?.Dispose();
     }
 
-    private void BuyFirstGenerator()
+    private void BuySharpGenerator()
     {
-        activeTask.Cores -= (int)activeTask.FirstGeneratorsAmount + 1;
-        activeTask.FirstGeneratorsAmount++;
+        activeTask.Lab.Cores -= (int)activeTask.Lab.ShardGenerators + 1;
+        activeTask.Lab.ShardGenerators++;
 
-        if (activeTask.FirstGeneratorsAmount == 1)
+        if (activeTask.Lab.ShardGenerators == 1)
         {
-            activeTask.LastShardUpdate = DateTime.Now;
+            activeTask.Lab.LastShardUpdate = DateTime.Now;
 
             if (_shardTimer == null)
             {
@@ -120,7 +154,7 @@
                 _shardTimer.Elapsed += GenerateShardLive;
                 _shardTimer.Start();
             }
-    }
+        }
     }
 }
 
@@ -198,8 +232,13 @@
         color: #ffffff;
         font-family: monospace; 
     }
+    
+    .generators-container {
+        padding-bottom: 60px;
+        border-bottom: 2px solid var(--theme-color);
+    }
 
-    .first-shards-generator-container {
+    .shards-generator-container {
         background: #1e1e1e;
         border: 2px solid #3a3f44;
         border-radius: 8px;
@@ -211,14 +250,14 @@
         align-items: center;
     }
 
-    .first-generator-text {
+    .generator-text {
         font-size: 18px;
         font-weight: 700;
         color: #ffffff;
         letter-spacing: 1px;
     }
 
-    .first-generator-btn {
+    .generator-btn {
         background: transparent;
         border: 2px solid #ffcc00; 
         color: #ffcc00;
@@ -229,20 +268,149 @@
         transition: 0.2s;
     }
 
-    .first-generator-btn:hover:not(:disabled) {
+    .generator-btn:hover:not(:disabled) {
         background: #ffcc00;
         color: #000;
     }
 
-    .first-generator-btn:disabled {
+    .generator-btn:disabled {
         border-color: #555555;
         color: #555555;
         cursor: not-allowed;
     }
     
-    .first-generators-amount-text {
+    .generators-amount-text {
         font-size: 14px;
         color: rgb(145, 156, 193);
+    }
+    
+    .laboratory-shop-container {
+        display: flex;
+        padding: 20px;
+        width: 100%
+    }
+    
+    .laboratory-shop-title {
+        width: 100%;
+        font-size: 24px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--theme-color);
+        text-shadow: 0 0 15px var(--theme-color), 0 0 15px #000;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .laboratory-shop-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .shard-balance-text {
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 30px;
+        letter-spacing: 1px;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    
+    .lab-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        width: 100%;
+        max-width: 800px;
+    }
+
+    .lab-item {
+        background: linear-gradient(145deg, #1a1a1a, #111);
+        border: 2px solid #333;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        transition: all 0.3s ease;
+    }
+
+    .lab-item:hover {
+        transform: translateY(-5px);
+        border-color: var(--theme-color);
+        box-shadow: 0 10px 30px var(--theme-color);
+    }
+
+    .lab-item-header {
+        font-size: 20px;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+
+    .lab-item-desc {
+        font-size: 14px;
+        color: #aaa;
+        margin-bottom: 15px;
+        line-height: 1.4;
+        flex-grow: 1; 
+    }
+
+    .lab-item-level {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--theme-color);
+        margin-bottom: 15px;
+        text-align: center;
+        letter-spacing: 2px;
+    }
+
+    .buy-shard-btn {
+        background: transparent;
+        color: var(--theme-color);
+        border: 2px solid var(--theme-color);
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .buy-shard-btn:hover {
+        background: var(--theme-color);
+        color: #fff;
+        box-shadow: 0 0 15px var(--theme-color);
+    }
+
+    .buy-shard-btn:active {
+        transform: scale(0.95);
+    }
+
+    .fountain-item { border-color: #004455; }
+
+    .fountain-item:hover {
+        border-color: #00d4ff;
+        box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+    }
+
+    .fountain-text {
+        color: #00d4ff;
+        text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+    }
+
+    .fountain-btn {
+        color: #00d4ff;
+        border-color: #00d4ff;
+    }
+
+    .fountain-btn:hover {
+        background: #00d4ff;
+        color: #000;
+        box-shadow: 0 0 20px #00d4ff;
     }
     
     @@media (max-width: 768px) {
@@ -263,6 +431,10 @@
 
         .shards-container {
             grid-column: span 2;
+        }
+        
+        .lab-grid {
+            grid-template-columns: 1fr;
         }
     }
     
