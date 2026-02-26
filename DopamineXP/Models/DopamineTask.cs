@@ -9,8 +9,8 @@ public class DopamineTask
     public TaskHabit Habit { get; set; } = new();
     public TaskEconomy Shop { get; set; } = new();
     public TaskLaboratory Lab { get; set; } = new();
-    
-    
+    public TaskFountains Fountains { get; set; } = new();
+
     public string GetRgba(double alpha)
     {
         string cleanHex = HexColor.Replace("#", "");
@@ -63,7 +63,7 @@ public class DopamineTask
         }
     }
     
-    public void LogMinutes(int minutes)
+    public void LogMinutes(double minutes)
     {
         Habit.MinutesLoggedToday += minutes;
         
@@ -71,7 +71,7 @@ public class DopamineTask
         double streakBuff = Habit.Streak * 0.5 + 1;
         double prestigeBuff = Stats.PrestigeCount + 1;
 
-        Stats.XP += (int)(2 * minutes * streakBuff) * shopBuff * prestigeBuff;
+        Stats.XP += Math.Round((2 * minutes * streakBuff) * shopBuff * prestigeBuff);
     }
     
     public void LevelUp()
@@ -79,14 +79,14 @@ public class DopamineTask
         while (Stats.XP >= Stats.Threshold) 
         {
             Stats.XP -= Stats.Threshold;
-            Shop.Points += Stats.Level * Lab.SynthesizerMultiplier;
+            Shop.Points += 1 * Lab.SynthesizerMultiplier;
             Stats.Level++;
         }
     }
 
     public void ApplyPrestige()
     {
-        Lab.Cores += Stats.Level - 10 + 1;
+        Lab.Cores += Stats.Level - 15 + 1;
         
         Stats.PrestigeCount++;
         
@@ -98,7 +98,7 @@ public class DopamineTask
 
     public string FormatNumber(int number)
     {
-        if (number < 1000) return number.ToString(); 
+        if (number < 10000) return number.ToString(); 
     
         return number.ToString("0.0e0");
 
@@ -106,7 +106,7 @@ public class DopamineTask
     
     public string FormatNumber(double number)
     {
-        if (number < 1000) return Math.Floor(number).ToString(); 
+        if (number < 10000) return Math.Floor(number).ToString(); 
     
         return number.ToString("0.0e0");
 
@@ -131,7 +131,7 @@ public class DopamineTask
         Lab.SynthesizerPrice *= 10;
         Lab.SynthesizerLevel++;
 
-        Lab.SynthesizerMultiplier += 1;
+        Lab.SynthesizerMultiplier++;
 
     }
     
@@ -142,8 +142,7 @@ public class DopamineTask
         Lab.Shards -= Lab.ResonatorPrice;
         Lab.ResonatorPrice *= 10;
         Lab.ResonatorLevel++;
-
-        Lab.ResonatorMultiplier += 1;
+        Lab.ResonatorMultiplier++;
     }
 
     public void TryBuyFountain()
@@ -159,17 +158,17 @@ public class TaskStats
     public double XP { get; set; } = 0;
     public int Level { get; set; } = 1;
     public int PrestigeCount { get; set; } = 0;
-    public int Threshold => (int)(Math.Pow(1.2, Level) * 20);
+    public double Threshold => Math.Round(Math.Pow(1.2, Level) * 20);
 }
 
 public class TaskHabit
 {
-    public bool IsHardcore { get; set; } = true;
+    public bool IsHardcore { get; set; } = false;
     public int Streak { get; set; } = 0;
     public double MinutesLoggedToday { get; set; } = 0;
     public string DailyStreakMessage { get; set; } = "";
     
-    public DateTime LastStreakEarnedDateTime { get; set; } = DateTime.MinValue;
+    public DateTime LastStreakEarnedDateTime { get; set; } = DateTime.Today.AddDays(-1);
     public DateTime LastMinutesLoggedResetDateTime { get; set; } = DateTime.Today;
 }
 
@@ -213,7 +212,7 @@ public class TaskEconomy
 public class TaskLaboratory
 {
     public int Cores { get; set; } = 0 ;
-    public double Shards { get; set; } = 111111110;
+    public double Shards { get; set; } = 0;
     public int ShardGenerators { get; set; } = 0;
     public DateTime LastShardUpdate { get; set; } = DateTime.Now;
 
@@ -230,5 +229,22 @@ public class TaskLaboratory
     public int SynthesizerMultiplier = 1;
     public int ResonatorMultiplier = 1;
 
+    public void ProcessTime()
+    {
+        TimeSpan timeAway = DateTime.Now - LastShardUpdate;
+        double secondsAway = timeAway.TotalSeconds;
 
+        if (secondsAway > 0)
+        {
+            Shards += secondsAway * ShardGenerators * ResonatorMultiplier;
+            LastShardUpdate = LastShardUpdate.AddSeconds(secondsAway);
+        }
+    }
+    
+}
+
+public class TaskFountains
+{
+    public double ShardsFilled = 0;
+    public double PointsFilled = 0;
 }

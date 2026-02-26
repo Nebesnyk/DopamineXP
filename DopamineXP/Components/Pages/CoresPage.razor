@@ -4,6 +4,7 @@
 @inject TrackerBrain Brain
 @using System.Timers
 @implements IDisposable
+@inject NavigationManager NavManager
 
 <div class="tracker-container" style="@($"--theme-color: {activeTask?.HexColor ?? "#ffffff"};")">
     @if (activeTask == null)
@@ -17,18 +18,20 @@
         <div class="main-scene">
             <div class="currencies-container">
                 <div class="resource-container cores-container">
-                    <div class="currency-text">CORES</div>
+                    <div class="currency-text">@activeTask.Name.ToUpper()<br>CORES</div>
                     <div class="resource-value">@activeTask.Lab.Cores</div>
                 </div>
                 
                 <div class="resource-container prestiges-container">
-                    <div class="currency-text">PRESTIGES</div>
+                    <div class="currency-text">@activeTask.Name.ToUpper()<br>PRESTIGES</div>
                     <div class="resource-value">@(activeTask.Stats.PrestigeCount)</div>
                 </div>
                 
                 <div class="resource-container shards-container">
-                    <div class="currency-text">SHARDS</div>
+                    <div class="currency-text">@activeTask.Name.ToUpper()<br>SHARDS</div>
                     <div class="resource-value">@(activeTask.FormatNumber(activeTask.Lab.Shards))</div>
+                    <div class="shards-per-second"
+                         style="color: #b6d4fe; font-family: monospace">@(activeTask.Lab.ShardGenerators * activeTask.Lab.ResonatorMultiplier)/s</div>
                 </div>
             </div>
             
@@ -76,9 +79,17 @@
                     <div class="lab-item fountain-item">
                         <div class="lab-item-header fountain-text">THE FOUNTAINS</div>
                         <div class="lab-item-desc">Pour your shards and @activeTask.Name.Substring(0, 1)P into fountains to unlock new powers...</div>
-                        <button class="btn buy-shard-btn fountain-btn"
-                                disabled="@(activeTask.Lab.Shards < activeTask.Lab.FountainPrice)"
-                                @onclick="BuyFountain">BUY: 1e6 shards</button>
+                        @if (!activeTask.Lab.IsFountainBought)
+                        {
+                            <button class="btn buy-shard-btn fountain-btn"
+                                    disabled="@(activeTask.Lab.Shards < activeTask.Lab.FountainPrice)"
+                                    @onclick="BuyFountain">BUY: 1e6 shards</button>
+                        }
+                        else
+                        {
+                            <button class="btn buy-shard-btn fountain-btn"
+                                    @onclick="GoToFountainsPage">GO TO FOUNTAINS</button>
+                        }
                     </div>
                 </div>
             </div>
@@ -100,7 +111,7 @@
         
         if (activeTask != null && activeTask.Lab.ShardGenerators > 0)
         {
-            CalculateOfflineShards();
+            activeTask.Lab.ProcessTime();
 
             if (_shardTimer == null) 
             {
@@ -110,31 +121,13 @@
             }
         }
     }
-
-    private void CalculateOfflineShards()
-    {
-        // Only generate Shards if they actually have extracted a Core
-        if (activeTask.Stats.PrestigeCount > 0)
-        {
-            TimeSpan timeAway = DateTime.Now - activeTask.Lab.LastShardUpdate;
-            int secondsAway = (int)timeAway.TotalSeconds;
-            
-            if (secondsAway > 0)
-            {
-                // Math: 10 seconds away * 5 generators = 50 shards.
-                activeTask.Lab.Shards += (secondsAway * activeTask.Lab.ShardGenerators * activeTask.Lab.ResonatorMultiplier / 10.0);
-                activeTask.Lab.LastShardUpdate = activeTask.Lab.LastShardUpdate.AddSeconds(secondsAway);
-                Brain.SaveToFile();
-            }
-        }
-    }
+    
 
     private void GenerateShardLive(object? sender, ElapsedEventArgs e)
     {
         if (activeTask != null && activeTask.Stats.PrestigeCount > 0)
         {
-            activeTask.Lab.Shards += activeTask.Lab.ShardGenerators * activeTask.Lab.ResonatorMultiplier / 10.0;
-            activeTask.Lab.LastShardUpdate = DateTime.Now;
+            activeTask.Lab.ProcessTime();
             
             InvokeAsync(StateHasChanged); 
         }
@@ -191,6 +184,11 @@
             activeTask.TryBuyFountain();
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
+        }
+
+        private void GoToFountainsPage()
+        {
+            NavManager.NavigateTo($"/task/cores/fountains/{System.Net.WebUtility.UrlEncode(activeTask.Name)}");
         }
 }
 

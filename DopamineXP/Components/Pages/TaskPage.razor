@@ -40,7 +40,7 @@
                 <div class="level-container">
                     <div class="level-xp-text">
                         <span class="level-text">Level @activeTask.Stats.Level</span>
-                        <span class="xp-text">@((int)activeTask.Stats.XP)/@((int)activeTask.Stats.Threshold)XP</span>
+                        <span class="xp-text">@(activeTask.FormatNumber(activeTask.Stats.XP))/@(activeTask.FormatNumber(activeTask.Stats.Threshold))XP</span>
                     </div>
                     
                     <div class="progress-track-bar">
@@ -104,13 +104,13 @@
                 </div>
             </div>
             <div class="prestige-container">
-                @if (activeTask.Stats.Level < 10)
+                @if (activeTask.Stats.Level < 15)
                 {
-                    <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 10 IN ORDER TO UNLOCK PRESTIGE</div>
+                    <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 15 IN ORDER TO UNLOCK PRESTIGE</div>
                 }
                 else
                 {
-                    int cores = activeTask.Stats.Level - 10;
+                    int cores = activeTask.Stats.Level - 15 + 1;
                     <div class="prestige-btn" @onclick="Prestige">PRESTIGE AND GET @cores @activeTask.Name.ToUpper() @(cores == 1 ? "CORE" : "CORES")</div>
                 }
             </div>
@@ -132,7 +132,7 @@
     public string TaskName { get; set; } = "";
 
     private DopamineTask? activeTask;
-    private int? _minutesSpent;
+    private double? _minutesSpent;
 
     protected override void OnParametersSet()
     {
@@ -487,6 +487,56 @@
         text-shadow: 0 0 10px rgba(255, 30, 0, 0.5);
     }
 
+
+    .points-streak {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        margin: 15px 0 30px 0;
+        font-family: monospace;
+        font-weight: 900;
+        letter-spacing: 1px;
+    }
+
+    .points-text {
+        background-color: rgba(0, 170, 255, 0.1); 
+        color: #00aaff;
+        padding: 8px 16px;
+        border: 1px solid #00aaff;
+        border-radius: 20px; 
+        
+        box-shadow: 0 0 10px rgba(0, 170, 255, 0.2), inset 0 0 5px rgba(0, 170, 255, 0.2);
+        text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+    }
+
+    .streak-text {
+        background-color: rgba(255, 85, 0, 0.1);
+        color: #ff5500;
+        padding: 8px 16px;
+        border: 1px solid #ff5500;
+        border-radius: 20px;
+
+        text-shadow: 0 0 5px rgba(255, 85, 0, 0.5);
+
+        animation: streak-pulse 1.5s infinite alternate;
+    }
+
+    @@keyframes streak-pulse {
+        0% {
+            box-shadow: 0 0 10px rgba(255, 85, 0, 0.2), inset 0 0 5px rgba(255, 85, 0, 0.2);
+        }
+        100% {
+            box-shadow: 0 0 20px rgba(255, 85, 0, 0.6), inset 0 0 10px rgba(255, 85, 0, 0.4);
+            border-color: #ff7700;
+            color: #ff7700;
+        }
+    }
+    
+    
+    
+    
+
     .delete-container {
         display: flex;
         justify-content: center;
@@ -812,6 +862,10 @@
             flex-direction: column;
             text-align: center;
             gap: 10px;
+        }
+        
+        .streak-text {
+            margin-top: 10px;
         }
         
         .shop-field {

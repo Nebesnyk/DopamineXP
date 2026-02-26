@@ -1,0 +1,290 @@
+﻿@page "/task/cores/fountains/{TaskName}" 
+@using DopamineXP.Services
+@using DopamineXP.Models
+@inject TrackerBrain Brain
+@implements IDisposable
+@using System.Timers
+
+<div class="tracker-container" style="@($"--theme-color: {activeTask?.HexColor ?? "#ffffff"};")">
+  @if (activeTask == null)
+  {
+    <div class="main-scene">
+      <h1 style="color: black; text-align: center; margin-top: 50px;">Task Not Found!</h1>
+    </div>
+  }
+  else
+  {
+    <div class="main-scene">
+      <div class="currencies-container">
+        <div class="resource-container cores-container">
+          <div class="currency-text">@activeTask.Name.ToUpper()<br>CORES</div>
+          <div class="resource-value">@activeTask.Lab.Cores</div>
+        </div>
+
+        <div class="resource-container prestiges-container">
+          <div class="currency-text">@activeTask.Name.ToUpper()<br>PRESTIGES</div>
+          <div class="resource-value">@(activeTask.Stats.PrestigeCount)</div>
+        </div>
+
+        <div class="resource-container shards-container">
+          <div class="currency-text">@activeTask.Name.ToUpper()<br>SHARDS</div>
+          <div class="resource-value">@(activeTask.FormatNumber(activeTask.Lab.Shards))</div>
+          <div class="shards-per-second"
+               style="color: #b6d4fe; font-family: monospace">@(activeTask.Lab.ShardGenerators * activeTask.Lab.ResonatorMultiplier)/s</div>
+        </div>
+      </div>
+      
+      <div class="fountains-box">
+
+        <div class="fountain-box">
+          <div class="fountain-bar">
+            <div class="fill-bar shard-fill-bar" style="height: @(activeTask.Fountains.ShardsFilled / LastShardMilestone * 100)%"></div>
+          </div>
+          <div style="color: #b6d4fe; font-family: monospace; font-size: 16px; text-align: center; margin-top: 20px;">Shards filled: @((int)activeTask.Fountains.ShardsFilled)/???</div>
+
+          @{
+            int firstShardMilestone = (int)Math.Pow(10, 6);
+            int secondShardMilestone = (int)Math.Pow(10, 7);
+          }
+          <button class="fill-button shard-fill-button"
+                  @onpointerdown="HandlePointerDown"
+                  @onpointerup="HandlePointerUp"
+                  @onpointerleave="HandlePointerUp">FILL UP<br>WITH SHARDS</button>
+        </div>
+
+        <div class="labels">
+
+        </div>
+
+
+      </div>
+    </div>
+  }
+</div>
+
+@code {
+
+  [Parameter] public string TaskName { get; set; } = "";
+
+  private DopamineTask? activeTask;
+  private Timer? _uiTimer;
+  private int LastShardMilestone = 100;
+
+  protected override void OnParametersSet()
+  {
+    string decodedName = System.Net.WebUtility.UrlDecode(TaskName);
+    activeTask = Brain.CustomTasks.FirstOrDefault(t => t.Name.Equals(decodedName, StringComparison.OrdinalIgnoreCase));
+
+    if (activeTask is not null)
+    {
+      activeTask.Lab.ProcessTime();
+
+      if (_uiTimer is null && activeTask.Lab.ShardGenerators > 0)
+      {
+        _uiTimer = new Timer(100);
+        _uiTimer.Elapsed += TickLive;
+        _uiTimer.Start();
+      }
+    }
+  }
+
+  private void TickLive(object? sender, ElapsedEventArgs e)
+  {
+    if (activeTask is not null)
+    {
+      activeTask.Lab.ProcessTime();
+
+      InvokeAsync(StateHasChanged);
+    }
+  }
+
+  public void Dispose()
+  {
+    _uiTimer?.Dispose();
+  }
+
+  private CancellationTokenSource? _holdCts;
+
+  private async Task HandlePointerDown()
+  {
+    _holdCts = new CancellationTokenSource();
+    CancellationToken token = _holdCts.Token;
+
+    try
+    {
+      await Task.Delay(300, token);
+
+      while (!token.IsCancellationRequested && activeTask?.Lab.Shards > 0.5)
+      {
+        double chunkToMove = activeTask.Lab.Shards * 0.1;
+        activeTask.Lab.Shards -= chunkToMove;
+        activeTask.Fountains.ShardsFilled += chunkToMove;
+
+        StateHasChanged();
+        await Task.Delay(50, token);
+      }
+    }
+    catch (TaskCanceledException) { }
+    finally
+    {
+      Brain.SaveToFile();
+    }
+  }
+
+  private void HandlePointerUp()
+  {
+    _holdCts?.Cancel();
+    _holdCts?.Dispose();
+    _holdCts = null;
+  }
+
+}
+
+<style>
+  .tracker-container {
+    overflow-y: scroll;
+    scrollbar-color: #3a3f44 #111111;
+
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 40px;
+    box-sizing: border-box;
+    min-height: 100vh;
+    background: radial-gradient(circle at top left, var(--theme-color), #111);
+  }
+
+  .main-scene {
+    background: rgba(30, 30, 30, 0.8);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    border-radius: 15px;
+    border: 2px solid var(--theme-color);
+    box-shadow: 0 0 20px var(--theme-color);
+    padding: 20px;
+  }
+
+
+  .currencies-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    width: max-content;
+    justify-content: center;
+    gap: 30px;
+    margin: 20px auto 40px;
+  }
+
+  .resource-container {
+    background: rgba(20, 20, 20, 0.9);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    min-width: 120px;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+    width: 100%
+  }
+
+  .cores-container {
+    border: 2px solid #ffcc00;
+    box-shadow: 0 0 15px rgba(255, 204, 0, 0.2), inset 0 0 15px rgba(0,0,0,0.8);
+  }
+
+  .shards-container {
+    border: 2px solid #00ffcc;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.2), inset 0 0 15px rgba(0,0,0,0.8);
+  }
+
+  .prestiges-container {
+    border: 2px solid #aa00ff;
+    box-shadow: 0 0 15px rgba(200, 0, 255, 0.2), inset 0 0 15px rgba(0,0,0,0.8);
+  }
+
+  .currency-text {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 10px;
+  }
+
+  .resource-value {
+    font-size: 32px;
+    font-weight: 900;
+    color: #ffffff;
+    font-family: monospace;
+  }
+  
+  
+  .fountain-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min-content;
+    margin-bottom: 20px;
+  }
+
+  .fountain-bar {
+    position: relative;
+    width: 50px;
+    height: 500px;
+    background-color: #393939;
+    border: 2px solid #00ffcc;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.2), inset 0 0 15px rgba(0,0,0,0.8);
+    border-radius: 10px;
+    
+    overflow: hidden;
+  }
+  
+  .fill-bar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    transition: 0.5s ease-out;
+  }
+  
+  .shard-fill-bar {
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    background-color: #00ffcc;
+    
+  }
+  
+  .fill-button {
+    width: max-content;
+    padding: 10px 20px;
+    margin-top: 20px;
+
+    background-color: #1a1a1a;
+    border: 2px solid #333333;
+    color: #888888;
+    box-shadow: 0 0 15px transparent;
+    border-radius: 15px;
+    transition: all 0.5s ease;
+    
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    
+    cursor: pointer;
+  }
+  
+  .shard-fill-button:hover {
+    border-color: #00ffcc;
+    color: #00ffcc;
+    background-color: #222222;
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.4), inset 0 0 10px rgba(0, 255, 204, 0.1);
+  }
+  
+  .fill-button:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 5px rgba(0, 255, 204, 0.4);
+  }
+  
+  
+  
+  
+
+  
+</style>
