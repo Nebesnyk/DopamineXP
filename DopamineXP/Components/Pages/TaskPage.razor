@@ -96,11 +96,21 @@
                      style="@(activeTask.Shop.HasFreeze ? "box-shadow: 0 8px 25px rgba(0, 157, 255, 0.2); border-color: rgba(0, 157, 255, 0.5);" : "" )">
                     <div class="shop-item-title">Streak Freeze</div>
                     <div class="shop-item-desc">Protects streak if you miss a day</div>
-                    <button class="buy-btn shield-buy"
-                            disabled="@(activeTask.Shop.HasFreeze || activeTask.Shop.Points < activeTask.Shop.StreakFreezePrice)"
-                            @onclick="BuyStreakFreeze">
-                        @(activeTask.Shop.HasFreeze ? "ACTIVE" : $"{activeTask.Shop.StreakFreezePrice} {activeTask.Name.Substring(0, 1)}P")
-                    </button>
+                    <div class="freeze-streak-amount">@activeTask.Shop.StreakFreezeAmount/5</div>
+                    @if (activeTask.Shop.StreakFreezeAmount == 0)
+                    {
+                        <button class="buy-btn shield-buy"
+                                disabled="@(activeTask.Shop.HasFreeze || activeTask.Shop.Points < activeTask.Shop.StreakFreezePrice)"
+                                @onclick="BuyStreakFreeze">
+                            @(activeTask.Shop.HasFreeze ? "ACTIVE" : $"{activeTask.Shop.StreakFreezePrice} {activeTask.Name.Substring(0, 1)}P")
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="buy-btn shield-buy"
+                                disabled="@activeTask.Shop.HasFreeze"
+                                @onclick="UseStreakFreeze"> @(activeTask.Shop.HasFreeze ? "ACTIVE" : "FREEZE!")</button>
+                    }
                 </div>
             </div>
             <div class="prestige-container">
@@ -142,6 +152,7 @@
         if (activeTask != null)
         {
             activeTask.CheckDailyReset();
+            activeTask.Shop.TryGetFreeFreezeStreak();
 
             if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
                 activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of 60";
@@ -281,6 +292,11 @@
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
         }
+    }
+
+    private void UseStreakFreeze()
+    {
+        activeTask.Shop.TryUseStreakFreeze();
     }
 
     private void Prestige()
@@ -689,6 +705,14 @@
         font-size: 14px;
         color: #aaaaaa;
         line-height: 1.2;
+    }
+    
+    .freeze-streak-amount {
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #95a3c3
     }
 
     .buy-btn {

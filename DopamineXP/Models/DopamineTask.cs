@@ -182,6 +182,9 @@ public class TaskEconomy
     
     public int MultiplierPrice { get; set; } = 3;
     public int StreakFreezePrice { get; set; } = 5;
+
+    public int StreakFreezeAmount = 0;
+    public DateTime LastGotFreeStreakFreezeDate = DateTime.Today.AddDays(7);
     
     public bool CanBuyMultiplier()
     {
@@ -206,6 +209,30 @@ public class TaskEconomy
             return true;
         }
         return false;
+    }
+
+    public void TryGetFreeFreezeStreak()
+    {
+        DateTime nextFreeStreakFreezeDate = LastGotFreeStreakFreezeDate.AddDays(7);
+        
+        while (nextFreeStreakFreezeDate <= DateTime.Today)
+        {
+            if (StreakFreezeAmount < 5)
+                StreakFreezeAmount++;
+            LastGotFreeStreakFreezeDate = nextFreeStreakFreezeDate;
+            nextFreeStreakFreezeDate = LastGotFreeStreakFreezeDate.AddDays(7);
+
+        }
+        
+    }
+
+    public void TryUseStreakFreeze()
+    {
+        if (StreakFreezeAmount > 0)
+        {
+            HasFreeze = true;
+            StreakFreezeAmount--;
+        }
     }
 }
 
