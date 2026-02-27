@@ -42,10 +42,7 @@ public class DopamineTask
     {
         Stats.Level = 1;
         Stats.XP = 0;
-        
         Shop.Points = 0;
-        Shop.MultiplierPrice = 3;
-        Shop.StreakFreezePrice = 5;
     }
     
     public void CheckDailyReset()
@@ -68,7 +65,7 @@ public class DopamineTask
         Habit.MinutesLoggedToday += minutes;
         
         double shopBuff = DateTime.Now <= Shop.MultiplierExpiration ? Shop.Multiplier : 1.0;
-        double streakBuff = Habit.Streak * 0.5 + 1;
+        double streakBuff = Habit.Streak * 0.3 + 1;
         double prestigeBuff = Stats.PrestigeCount + 1;
 
         Stats.XP += Math.Round((2 * minutes * streakBuff) * shopBuff * prestigeBuff);
@@ -151,6 +148,21 @@ public class DopamineTask
 
         Lab.IsFountainBought = true;
     }
+    
+    public void TryGetFreeFreezeStreak()
+    {
+        DateTime nextFreeStreakFreezeDate = Shop.LastGotFreeStreakFreezeDate.AddDays(7);
+        
+        while (nextFreeStreakFreezeDate <= DateTime.Today)
+        {
+            if (Shop.StreakFreezeAmount < 5 && Habit.Streak > 0)
+                Shop.StreakFreezeAmount++;
+            Shop.LastGotFreeStreakFreezeDate = nextFreeStreakFreezeDate;
+            nextFreeStreakFreezeDate = Shop.LastGotFreeStreakFreezeDate.AddDays(7);
+
+        }
+        
+    }
 }
 
 public class TaskStats
@@ -211,20 +223,7 @@ public class TaskEconomy
         return false;
     }
 
-    public void TryGetFreeFreezeStreak()
-    {
-        DateTime nextFreeStreakFreezeDate = LastGotFreeStreakFreezeDate.AddDays(7);
-        
-        while (nextFreeStreakFreezeDate <= DateTime.Today)
-        {
-            if (StreakFreezeAmount < 5)
-                StreakFreezeAmount++;
-            LastGotFreeStreakFreezeDate = nextFreeStreakFreezeDate;
-            nextFreeStreakFreezeDate = LastGotFreeStreakFreezeDate.AddDays(7);
-
-        }
-        
-    }
+    
 
     public void TryUseStreakFreeze()
     {

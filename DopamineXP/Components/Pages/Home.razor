@@ -37,6 +37,53 @@
             }
         
         <div class="create-task-btn" @onclick="CreateTask">CREATE THE TASK!</div>
+        
+        
+        <div class="faq-container">
+            <div class="faq-header"> F.A.Q.</div>
+
+            <details class="faq-item task-level-item">
+                <summary class="faq-question task-level-question">What is this app about?</summary>
+                <div class="faq-answer task-level-answer">
+                    The core of the application is simple: log the minutes you spend 
+                    on a task to earn Experience Points (XP). 
+                    Once you earn enough XP, you will Level Up and receive one Point. 
+                    The currency name is based on the task's first letter—for example, 
+                    French gives you French Points (FP), and Gym gives you Gym Points (GP).
+                </div>
+            </details>
+
+            <details class="faq-item task-level-item">
+                <summary class="faq-question task-level-question">What does streak give me?</summary>
+                <div class="faq-answer task-level-answer">
+                    Completing a task every single day builds your Streak. 
+                    Your Streak acts as a massive multiplier for your XP gains, using the formula: (Streak * 0.3) + 1. 
+                    This means by the 10th day of an active streak, you will be earning a massive 4x XP multiplier!
+                </div>
+            </details>
+
+            <details class="faq-item task-level-item">
+                <summary class="faq-question task-level-question">What is this shop?</summary>
+                <div class="faq-answer task-level-answer">
+                    At the beginning, the Shop contains only two items: an XP Multiplier and a Streak Freeze. 
+                    Every time you buy an item, its price permanently doubles. 
+                    Keep in mind that these prices won't reset for a very long time, so spend strategically. 
+                    However, as long as your streak remains above zero, the system will actively reward you with 
+                    one free Streak Freeze every 7 days (up to a maximum inventory of 5).
+                </div>
+            </details>
+            
+            <details class="faq-item prestige-level-item">
+                <summary class="faq-question prestige-level-question">What is prestige?</summary>
+                <div class="faq-answer prestige-level-answer">
+                    Prestiging is your path to long-term power. When your task reaches Level 15, 
+                    you undergo a Prestige: you extract a Task Core and your task's level, xp and points
+                    reset to 1. While this might sound like a setback, it is actually a massive upgrade. 
+                    Prestiging rewards you with a Core—a highly valuable currency - task shards - used in the Laboratory 
+                    to buy permanent, game-changing upgrades. The amount of prestiges also works as a multiplier of your xp
+                </div>
+            </details>
+        </div>
     </div>
 </div>
 
@@ -312,6 +359,104 @@
         100% { background-position: 300% 50%; }
     }
     /*CUSTOM ADD A TASK BUTTON FIELD//////////*/
+
+    .faq-container {
+        margin-top: 60px;
+        padding: 20px;
+        border-top: 2px dashed #333333;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .faq-header {
+        color: #ffffff;
+        font-family: monospace;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .faq-item {
+        background-color: rgba(20, 20, 20, 0.8);
+        border: 1px solid #333333;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+
+    .faq-question {
+        padding: 18px 20px;
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        list-style: none; 
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .faq-question::-webkit-details-marker {
+        display: none;
+    }
+
+    .faq-question::after {
+        content: '+';
+        color: #666;
+        font-size: 20px;
+    }
+
+    .faq-item[open] .faq-question::after {
+        content: '−';
+    }
+
+    .faq-answer {
+        padding: 0 20px 20px 20px;
+        color: #aaaaaa;
+        line-height: 1.6;
+        font-size: 14px;
+        margin-top: -5px;
+        padding-top: 15px;
+    }
+    
+    .task-level-item[open] {
+        border-color: #00aaff;
+        box-shadow: 0 0 15px rgba(0, 170, 255, 0.1);
+    }
+
+    .task-level-question {
+        color: #00aaff;
+    }
+    
+    .task-level-question[open] .task-level-question::after {
+        color: #00aaff;
+    }
+    
+    .task-level-answer {
+        border-top: 1px solid rgba(0, 170, 255, 0.2);
+    }
+
+
+    .prestige-level-item[open] {
+        border-color: #ff6a00;
+        box-shadow: 0 0 15px rgba(0, 170, 255, 0.1);
+    }
+
+    .prestige-level-question {
+        color: #ff6a00;
+    }
+
+    .prestige-level-question[open] .task-level-question::after {
+        color: #ff6a00;
+    }
+
+    .prestige-level-answer {
+        border-top: 1px solid rgb(255, 106, 0, 0.2);
+    }
     
     @@media (max-width: 768px) {
         .tracker-container {

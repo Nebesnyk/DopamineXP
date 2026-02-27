@@ -27,11 +27,14 @@ public class TrackerBrain
         
         appFile = Path.Combine(folderPath, "DopamineXPData.json");
         
+        LoadFromFile();
+        
+        
     }
     
     private string ToJson()
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions{WriteIndented = true});
+        return JsonSerializer.Serialize(CustomTasks, new JsonSerializerOptions{WriteIndented = true});
     }
 
     public void SaveToFile()
@@ -45,10 +48,21 @@ public class TrackerBrain
             return;
         string jsonString = File.ReadAllText(appFile);
 
-        TrackerBrain? loadedBrain = JsonSerializer.Deserialize<TrackerBrain>(jsonString);
+        List<DopamineTask> loadedBrain = JsonSerializer.Deserialize<List<DopamineTask>>(jsonString);
 
-        if (loadedBrain != null && loadedBrain.CustomTasks != null)
-            this.CustomTasks = loadedBrain.CustomTasks;
+        if (loadedBrain != null)
+        {
+            this.CustomTasks = loadedBrain;
+            
+            foreach (var task in CustomTasks)
+            {
+                if (task.Shop == null) task.Shop = new TaskEconomy(); 
+                if (task.Habit == null) task.Habit = new TaskHabit();
+                if (task.Fountains == null) task.Fountains = new TaskFountains();
+                if (task.Lab == null) task.Lab = new TaskLaboratory();
+                if (task.Stats == null) task.Stats = new TaskStats();
+            }
+        }
     }
 
     public int CalculateNewStreak(int currentStreak, DateTime lastLogDate)

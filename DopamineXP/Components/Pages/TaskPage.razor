@@ -152,7 +152,7 @@
         if (activeTask != null)
         {
             activeTask.CheckDailyReset();
-            activeTask.Shop.TryGetFreeFreezeStreak();
+            activeTask.TryGetFreeFreezeStreak();
 
             if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
                 activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of 60";
