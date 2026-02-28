@@ -54,6 +54,9 @@ public class DopamineTask
             {
                 SoftReset();
                 Habit.Streak = 0;
+                Lab.Shards = 0;
+                Lab.Cores = 0;
+                Stats.PrestigeCount = 0;
             }
 
             Habit.MinutesLoggedToday = 0;
