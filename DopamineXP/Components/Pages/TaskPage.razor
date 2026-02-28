@@ -53,15 +53,22 @@
                         <div class="level-up-btn @CanLevelUp()" @onclick="LevelUp">LEVEL UP!</div>
                     </div>
                     
-                    @if (!string.IsNullOrEmpty(activeTask.Habit.DailyStreakMessage) && (activeTask.Habit.LastStreakEarnedDateTime == DateTime.Today || activeTask.Habit.IsHardcore))
+                    @if (!string.IsNullOrEmpty(activeTask.Habit.DailyStreakMessage))
                     {
-                        string colorClass = activeTask.Habit.DailyStreakMessage.Contains("FREEZE") ? "streak-msg-freeze" : "streak-msg-hit";
-                        if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
-                            colorClass = "streak-msg-hardcore";
+                        string colorClass = "streak-msg-progress"; 
+
+                        if (activeTask.Habit.LastStreakEarnedDateTime == DateTime.Today)
+                        {
+                            colorClass = "streak-msg-hit";
+                        }
+                        else if (activeTask.Habit.DailyStreakMessage.Contains("FREEZE"))
+                        {
+                            colorClass = "streak-msg-freeze";
+                        }
+
                         <div class="streak-msg-base @colorClass">
                             @activeTask.Habit.DailyStreakMessage
                         </div>
-                        
                     }
                 </div>
                 
@@ -139,7 +146,7 @@
                 <div class="modal-overlay">
                     <div class="modal-box">
                         <div class="modal-title">SYSTEM PURGE</div>
-           0             <div class="modal-text">
+                        <div class="modal-text">
                             Are you absolutely sure you want to delete <strong>@activeTask?.Name</strong>? 
                             <br><br>
                             All accumulated Shards, Cores, and historical XP will be permanently erased. This action cannot be undone.
@@ -172,9 +179,7 @@
         {
             activeTask.CheckDailyReset();
             activeTask.TryGetFreeFreezeStreak();
-
-            if (activeTask.Habit.IsHardcore && activeTask.Habit.MinutesLoggedToday < 60)
-                activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of 60";
+            EvaluateStreak();
 
             if (_isEditing)
                 _isEditing = !_isEditing;
@@ -199,35 +204,40 @@
     private void EvaluateStreak()
     {
         DateTime today = DateTime.Today;
-        
-        if (activeTask.Habit.LastStreakEarnedDateTime < today)
+        int targetMinutes = activeTask.Habit.IsHardcore ? 60 : 15;
+
+        if (activeTask.Habit.LastStreakEarnedDateTime < today.AddDays(-1))
         {
-            if (!activeTask.Habit.IsHardcore || activeTask.Habit.MinutesLoggedToday >= 60)
+            if (activeTask.Shop.HasFreeze)
             {
-                if (activeTask.Habit.LastStreakEarnedDateTime == today.AddDays(-1))
-                {
-                    activeTask.Habit.Streak++;
-                    activeTask.Habit.DailyStreakMessage = $"STREAK HIT! {activeTask.Habit.Streak} DAYS!";
-                }
-                else if (activeTask.Habit.LastStreakEarnedDateTime == today.AddDays(-2) && activeTask.Shop.HasFreeze)
-                {
-                    activeTask.Shop.HasFreeze = false;
-                    activeTask.Habit.Streak++; 
-                    activeTask.Habit.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Habit.Streak} DAYS!";
-                }
-                else
-                {
-                    activeTask.Habit.Streak = 1;
-                    activeTask.Habit.DailyStreakMessage = "STREAK STARTED! DAY 1!";
-                }
-                activeTask.Habit.LastStreakEarnedDateTime = today;
+                activeTask.Shop.HasFreeze = false; 
+            
+                activeTask.Habit.LastStreakEarnedDateTime = today.AddDays(-1); 
             }
             else
             {
-                activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of 60";
+                activeTask.Habit.Streak = 0; 
+            
+                activeTask.Habit.LastStreakEarnedDateTime = today.AddDays(-1); 
             }
-            
-            
+        }
+
+        if (activeTask.Habit.LastStreakEarnedDateTime < today)
+        {
+            if (activeTask.Habit.MinutesLoggedToday >= targetMinutes)
+            {
+                activeTask.Habit.Streak++;
+                activeTask.Habit.LastStreakEarnedDateTime = today;
+                activeTask.Habit.DailyStreakMessage = $"STREAK HIT! {activeTask.Habit.Streak} DAYS!";
+            }
+            else
+            {
+                activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of {targetMinutes}";
+            }
+        }
+        else
+        {
+            activeTask.Habit.DailyStreakMessage = $"Goal met for today! Streak is safely at {activeTask.Habit.Streak}!";
         }
     }
 
@@ -320,6 +330,7 @@
     {
         if (activeTask.Shop.CanBuyStreakFreeze())
         {
+            activeTask.Habit.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Habit.Streak} DAYS!";
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
         }
@@ -530,7 +541,7 @@
         text-shadow: 0 0 10px rgba(0, 157, 255, 0.5);
     }
 
-    .streak-msg-hardcore {
+    .streak-msg-progress {
         color: #ff5900;
         text-shadow: 0 0 10px rgba(255, 30, 0, 0.5);
     }
