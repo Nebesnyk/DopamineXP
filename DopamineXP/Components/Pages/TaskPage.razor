@@ -73,7 +73,7 @@
                 </div>
                 
                 <div class="points-streak">
-                    <span class="points-text">@activeTask.Shop.Points @(!isPageNull())P</span>
+                    <span class="points-text">@activeTask.Shop.Points @(!isPageNull() ? activeTask.Name.Substring(0, 1).ToUpper() : "?")P</span>
                     <span class="streak-text">Streak: @activeTask.Habit.Streak days</span>
                 </div>
                 
@@ -100,12 +100,12 @@
                     <div class="shop-item-title">Streak Freeze</div>
                     <div class="shop-item-desc">Protects streak if you miss a day</div>
                     <div class="freeze-streak-amount">@activeTask.Shop.StreakFreezeAmount/5</div>
-                    @if (activeTask.Shop.HasFreezeInInventory)
+                    @if (!activeTask.Shop.HasFreezeInInventory)
                     {
                         <button class="buy-btn shield-buy"
                                 disabled="@(activeTask.Shop.HasFreeze || activeTask.Shop.CanBuyFreeze)"
                                 @onclick="BuyStreakFreeze">
-                            @(activeTask.Shop.HasFreeze ? "ACTIVE" : (isPageNull() ? activeTask.Name.Substring(0, 1) : "?" + "P")));
+                            @(activeTask.Shop.HasFreeze ? "ACTIVE" : !isPageNull() ? activeTask.Name.Substring(0, 1).ToUpper() + "P" : "?P")
                         </button>
                     }
                     else
