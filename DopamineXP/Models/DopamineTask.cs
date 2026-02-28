@@ -4,6 +4,7 @@ public class DopamineTask
 {
     public string Name { get; set; } = "New Task";
     public string HexColor { get; set; } = "#009dff";
+    public int TargetMinutes { get; set; } = 15;
 
     public TaskStats Stats { get; set; } = new();
     public TaskHabit Habit { get; set; } = new();
@@ -80,7 +81,50 @@ public class DopamineTask
             Stats.Level++;
         }
     }
+    
+    public void EvaluateStreak()
+    {
+        DateTime today = DateTime.Today;
 
+        if (Habit.LastStreakEarnedDateTime < today.AddDays(-1))
+        {
+            if (Shop.HasFreeze)
+            {
+                Shop.HasFreeze = false; 
+            
+                Habit.LastStreakEarnedDateTime = today.AddDays(-1); 
+            }
+            else
+            {
+                Habit.Streak = 0; 
+            
+                Habit.LastStreakEarnedDateTime = today.AddDays(-1); 
+            }
+        }
+
+        if (Habit.LastStreakEarnedDateTime < today)
+        {
+            if (Habit.MinutesLoggedToday >= TargetMinutes)
+            {
+                Habit.Streak++;
+                Habit.LastStreakEarnedDateTime = today;
+                Habit.DailyStreakMessage = $"STREAK HIT! {Habit.Streak} DAYS!";
+            }
+            else
+            {
+                Habit.DailyStreakMessage = $"You have spent {Habit.MinutesLoggedToday} minutes out of {TargetMinutes}";
+            }
+        }
+        else
+        {
+            Habit.DailyStreakMessage = $"Goal met for today! Streak is safely at {Habit.Streak}!";
+        }
+    }
+
+    public bool CanPrestige => Stats.Level >= Stats.LevelToPrestigeAt;
+
+    public int CoresForPrestige => Stats.Level - 15 + 1;
+    
     public void ApplyPrestige()
     {
         Lab.Cores += Stats.Level - 15 + 1;
@@ -171,6 +215,8 @@ public class TaskStats
     public int Level { get; set; } = 1;
     public int PrestigeCount { get; set; } = 0;
     public double Threshold => Math.Round(Math.Pow(1.2, Level) * 20);
+    public readonly int LevelToPrestigeAt = 15;
+    public bool HasPrestiged => PrestigeCount > 0;
 }
 
 public class TaskHabit
@@ -189,7 +235,11 @@ public class TaskEconomy
     public int Points { get; set; } = 0;
     
     public bool HasFreeze { get; set; } = false;
+    public bool HasFreezeInInventory => StreakFreezeAmount > 0;
+    public bool CanBuyFreeze => Points < StreakFreezePrice;
     public int Multiplier = 2;
+    public bool IsMultiplierBuffActive => DateTime.Now <= MultiplierExpiration;
+    public bool CanBuyMultiplier => Points < MultiplierPrice;
     public DateTime MultiplierExpiration { get; set; } = DateTime.MinValue;
     
     public int MultiplierPrice { get; set; } = 3;
@@ -198,7 +248,7 @@ public class TaskEconomy
     public int StreakFreezeAmount = 0;
     public DateTime LastGotFreeStreakFreezeDate = DateTime.Today.AddDays(7);
     
-    public bool CanBuyMultiplier()
+    public bool DidBuyMultiplier()
     {
         if (Points >= MultiplierPrice)
         {
@@ -211,7 +261,7 @@ public class TaskEconomy
         return false;
     }
 
-    public bool CanBuyStreakFreeze()
+    public bool DidBuyStreakFreeze()
     {
         if (Points >= StreakFreezePrice)
         {
@@ -222,9 +272,7 @@ public class TaskEconomy
         }
         return false;
     }
-
     
-
     public void TryUseStreakFreeze()
     {
         if (StreakFreezeAmount > 0)
@@ -233,6 +281,8 @@ public class TaskEconomy
             StreakFreezeAmount--;
         }
     }
+    
+    
 }
 
 public class TaskLaboratory

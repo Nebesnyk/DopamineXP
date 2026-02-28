@@ -17,6 +17,11 @@
                 <input type="color" class="color-input" @bind="_hexColor"/>
             </div>
             
+            <div class="input-container">
+                <span style="font-size: 20px; margin-bottom: 5px;">Daily Goal (Minutes)</span>
+                <input type="number" class="task-input" min="0" max="1440" @bind="_targetMinutes"/>
+            </div>
+            
             <div class="input-container hardcore-wrapper">
                 <span style="font-size: 20px; margin-bottom: 5px;">Turn on hardcore?</span>
                 <input type="checkbox" class="hardcore-input" @bind="_isHardcore"/>
@@ -91,6 +96,7 @@
 
     private string _name = "";
     private string _hexColor = "#000000";
+    private int _targetMinutes = 15;
     private bool _isHardcore = false;
 
     private void CreateTask()
@@ -99,7 +105,7 @@
             return;
         
         Brain.AddTask(
-            new DopamineTask { Name = _name.Trim(), HexColor = _hexColor, Habit = new TaskHabit{IsHardcore = _isHardcore} });
+            new DopamineTask { Name = _name.Trim(), HexColor = _hexColor, TargetMinutes = _targetMinutes, Habit = new TaskHabit{IsHardcore = _isHardcore} });
 
         Brain.SaveToFile();
         

@@ -5,7 +5,7 @@
 
 <div class="tracker-container" style="@($"--theme-color: {activeTask?.HexColor ?? "#ffffff"};")">
     
-    @if (activeTask == null)
+    @if (isPageNull())
     {
         <div class="main-scene">
             <h1 style="color: white; text-align: center; margin-top: 50px;">Task Not Found!</h1>
@@ -73,19 +73,15 @@
                 </div>
                 
                 <div class="points-streak">
-                    <span class="points-text">@activeTask.Shop.Points @activeTask.Name.Substring(0, 1)P</span>
+                    <span class="points-text">@activeTask.Shop.Points @(!isPageNull())P</span>
                     <span class="streak-text">Streak: @activeTask.Habit.Streak days</span>
                 </div>
                 
             </div>
             <div class="level-text" style="font-weight: 600; font-size: 36px; text-align: center; margin-top: 20px">SHOP</div>
             <div class="shop-field">
-                @{
-                    bool isBuffActive = DateTime.Now <= activeTask.Shop.MultiplierExpiration;
-                }
-
                 <div class="shop-style xp-boost-field"
-                     style="@(isBuffActive ? "box-shadow: 0 8px 25px rgba(0, 255, 102, 0.2); border-color: rgba(0, 255, 102, 0.5);" : "")">
+                     style="@(activeTask.Shop.IsMultiplierBuffActive ? "box-shadow: 0 8px 25px rgba(0, 255, 102, 0.2); border-color: rgba(0, 255, 102, 0.5);" : "")">
      
                     <div class="shop-item-title">XP Buff</div>
                     <div class="shop-item-desc">
@@ -93,9 +89,9 @@
                     </div>
     
                     <button class="buy-btn xp-buy"
-                            disabled="@(isBuffActive || activeTask.Shop.Points < activeTask.Shop.MultiplierPrice)"
+                            disabled="@(activeTask.Shop.IsMultiplierBuffActive || activeTask.Shop.CanBuyMultiplier)"
                             @onclick="BuyMultiplier">
-                        @(isBuffActive ? "ACTIVE" : $"{activeTask.Shop.MultiplierPrice} {activeTask.Name.Substring(0, 1)}P")
+                        @(activeTask.Shop.IsMultiplierBuffActive ? "ACTIVE" : $"{activeTask.Shop.MultiplierPrice} {activeTask.Name.Substring(0, 1)}P")
                     </button>
                 </div>
 
@@ -104,12 +100,12 @@
                     <div class="shop-item-title">Streak Freeze</div>
                     <div class="shop-item-desc">Protects streak if you miss a day</div>
                     <div class="freeze-streak-amount">@activeTask.Shop.StreakFreezeAmount/5</div>
-                    @if (activeTask.Shop.StreakFreezeAmount == 0)
+                    @if (activeTask.Shop.HasFreezeInInventory)
                     {
                         <button class="buy-btn shield-buy"
-                                disabled="@(activeTask.Shop.HasFreeze || activeTask.Shop.Points < activeTask.Shop.StreakFreezePrice)"
+                                disabled="@(activeTask.Shop.HasFreeze || activeTask.Shop.CanBuyFreeze)"
                                 @onclick="BuyStreakFreeze">
-                            @(activeTask.Shop.HasFreeze ? "ACTIVE" : $"{activeTask.Shop.StreakFreezePrice} {activeTask.Name.Substring(0, 1)}P")
+                            @(activeTask.Shop.HasFreeze ? "ACTIVE" : (isPageNull() ? activeTask.Name.Substring(0, 1) : "?" + "P")));
                         </button>
                     }
                     else
@@ -121,18 +117,17 @@
                 </div>
             </div>
             <div class="prestige-container">
-                @if (activeTask.Stats.Level < 15)
+                @if (!activeTask.CanPrestige)
                 {
                     <div class="prestige-explanation-text" style="color: white;">REACH LEVEL 15 IN ORDER TO UNLOCK PRESTIGE</div>
                 }
                 else
                 {
-                    int cores = activeTask.Stats.Level - 15 + 1;
-                    <div class="prestige-btn" @onclick="Prestige">PRESTIGE AND GET @cores @activeTask.Name.ToUpper() @(cores == 1 ? "CORE" : "CORES")</div>
+                    <div class="prestige-btn" @onclick="Prestige">PRESTIGE AND GET @activeTask.CoresForPrestige @activeTask.Name.ToUpper() @(activeTask.CoresForPrestige == 1 ? "CORE" : "CORES")</div>
                 }
             </div>
             
-            @if (activeTask.Stats.PrestigeCount > 0)
+            @if (activeTask.Stats.HasPrestiged)
             {
                 <a href=@($"/task/cores/{System.Net.WebUtility.UrlEncode(activeTask.Name)}") class="to-cores-page-btn">GO TO THE CORES LABORATORY</a>
             }
@@ -179,7 +174,7 @@
         {
             activeTask.CheckDailyReset();
             activeTask.TryGetFreeFreezeStreak();
-            EvaluateStreak();
+            activeTask.EvaluateStreak();
 
             if (_isEditing)
                 _isEditing = !_isEditing;
@@ -195,50 +190,10 @@
         activeTask.LogMinutes(_minutesSpent.Value);
         _minutesSpent = null;
 
-        EvaluateStreak();
+        activeTask.EvaluateStreak();
         
         Brain.OnChange?.Invoke(); 
         Brain.SaveToFile();
-    }
-
-    private void EvaluateStreak()
-    {
-        DateTime today = DateTime.Today;
-        int targetMinutes = activeTask.Habit.IsHardcore ? 60 : 15;
-
-        if (activeTask.Habit.LastStreakEarnedDateTime < today.AddDays(-1))
-        {
-            if (activeTask.Shop.HasFreeze)
-            {
-                activeTask.Shop.HasFreeze = false; 
-            
-                activeTask.Habit.LastStreakEarnedDateTime = today.AddDays(-1); 
-            }
-            else
-            {
-                activeTask.Habit.Streak = 0; 
-            
-                activeTask.Habit.LastStreakEarnedDateTime = today.AddDays(-1); 
-            }
-        }
-
-        if (activeTask.Habit.LastStreakEarnedDateTime < today)
-        {
-            if (activeTask.Habit.MinutesLoggedToday >= targetMinutes)
-            {
-                activeTask.Habit.Streak++;
-                activeTask.Habit.LastStreakEarnedDateTime = today;
-                activeTask.Habit.DailyStreakMessage = $"STREAK HIT! {activeTask.Habit.Streak} DAYS!";
-            }
-            else
-            {
-                activeTask.Habit.DailyStreakMessage = $"You have spent {activeTask.Habit.MinutesLoggedToday} minutes out of {targetMinutes}";
-            }
-        }
-        else
-        {
-            activeTask.Habit.DailyStreakMessage = $"Goal met for today! Streak is safely at {activeTask.Habit.Streak}!";
-        }
     }
 
     private string CanLevelUp()
@@ -319,7 +274,7 @@
 
     private void BuyMultiplier()
     {
-        if (activeTask.Shop.CanBuyMultiplier()) 
+        if (activeTask.Shop.DidBuyMultiplier()) 
         {
             Brain.OnChange?.Invoke();
             Brain.SaveToFile();
@@ -328,7 +283,7 @@
 
     private void BuyStreakFreeze()
     {
-        if (activeTask.Shop.CanBuyStreakFreeze())
+        if (activeTask.Shop.DidBuyStreakFreeze())
         {
             activeTask.Habit.DailyStreakMessage = $"STREAK SAVED BY FREEZE! {activeTask.Habit.Streak} DAYS!";
             Brain.OnChange?.Invoke();
@@ -350,688 +305,11 @@
         NavManager.NavigateTo($"/task/cores/{System.Net.WebUtility.UrlEncode(activeTask.Name)}");
     }
 
+    private bool isPageNull()
+    {
+        return string.IsNullOrEmpty(activeTask?.Name);
+    }
+
     
 }
 
-<style>
-    a {
-        text-decoration: none;
-    }
-    
-    .tracker-container {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        padding: 40px;
-        box-sizing: border-box;
-        min-height: 100vh;
-        background: radial-gradient(circle at top left, var(--theme-color), #111);
-    }
-    
-    .main-scene {
-        background: rgba(30, 30, 30, 0.8);
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-        border-radius: 15px;
-        border: 2px solid var(--theme-color);
-        box-shadow: 0 0 20px var(--theme-color);
-        margin-bottom: 40px;
-    }
-    
-    .task-header {
-        padding: 30px;
-        border-bottom: 2px solid var(--theme-color);
-    }
-    
-    .task-title {
-        color: var(--theme-color);
-        font-size: 40px;
-        font-weight: 900;
-        text-align: center;
-        margin: 0;
-        text-shadow: 0 0 15px var(--theme-color);
-
-        overflow-wrap: break-word;
-        word-wrap: break-word;
-        word-break: break-word;
-    }
-
-    .task-content {
-        padding: 30px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-
-        border-bottom: 2px solid var(--theme-color);
-    }
-    
-    .level-container {
-        background: radial-gradient(circle at top left, #454545, #5c5c5c);
-        padding: 20px;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-
-    .level-xp-text {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline; 
-        padding-bottom: 12px;
-        text-transform: uppercase; 
-    }
-
-    .level-text {
-        font-size: 28px;
-        font-weight: 900;
-        letter-spacing: 2px;
-        color: var(--theme-color);
-        text-shadow: 0 0 15px var(--theme-color);
-    }
-
-    .xp-text {
-        font-size: 18px;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.6); 
-        letter-spacing: 1px;
-    }
-    
-    .progress-track-bar {
-        background-color: #2e2e2e;
-        height: 40px;
-        width: 100%;
-        border-radius: 15px;
-        box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    .progress-fill-bar {
-        height: 40px;
-        border-radius: 15px;
-        transition: width 0.4s ease-out;
-        background: linear-gradient(to right, #222, var(--theme-color));
-        box-shadow: 0 0 10px var(--theme-color);
-    }
-    
-    .level-input-buttons {
-        display: flex;
-        gap: 15px;
-        margin-top: 20px;
-    }
-    
-    .xp-input {
-        background-color: #2e2e2e;
-        color: white;
-        border: 2px solid #5c5c5c;
-        border-radius: 8px;
-        padding: 10px 15px;
-        font-size: 18px;
-        font-weight: 700;
-        width: 130px;
-        text-align: center;
-        outline: none;
-        box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    .append-xp-btn {
-        background-color: #3a3f44;
-        color: white;
-        border: 2px solid #5c5c5c;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    .level-up-btn {
-        margin-left: auto; 
-        background-color: transparent;
-        color: #444444;
-        border: 2px solid #444444;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-size: 18px;
-        font-weight: 900;
-        cursor: not-allowed; 
-    }
-    
-    .level-up-btn.is-ready {
-        cursor: pointer;
-        color: var(--theme-color);
-        border-color: currentColor;
-        animation: pulse-level-up 2s infinite;
-    }
-    
-    @@keyframes pulse-level-up {
-        0% { box-shadow: 0 0 5px currentColor, inset 0 0 5px currentColor; }
-        50% { box-shadow: 0 0 20px currentColor, inset 0 0 10px currentColor; }
-        100% { box-shadow: 0 0 5px currentColor, inset 0 0 5px currentColor; }
-    }
-    
-    .points-streak {
-        display: flex;
-        justify-content: space-between;
-        background: radial-gradient(circle at top left, #454545, #5c5c5c);
-        padding: 20px;
-        border-radius: 8px;
-        font-size: 18px;
-        font-weight: 700;
-        color: #ffffff;
-    }
-
-    .streak-msg-base {
-        text-align: center;
-        margin-top: 15px;
-        font-weight: 900;
-        letter-spacing: 1px;
-        animation: fade-in 0.5s;
-    }
-
-    .streak-msg-hit {
-        color: #00ff66;
-        text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
-    }
-
-    .streak-msg-freeze {
-        color: #009dff;
-        text-shadow: 0 0 10px rgba(0, 157, 255, 0.5);
-    }
-
-    .streak-msg-progress {
-        color: #ff5900;
-        text-shadow: 0 0 10px rgba(255, 30, 0, 0.5);
-    }
-
-
-    .points-streak {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-        margin: 15px 0 30px 0;
-        font-family: monospace;
-        font-weight: 900;
-        letter-spacing: 1px;
-    }
-
-    .points-text {
-        background-color: rgba(0, 170, 255, 0.1); 
-        color: #00aaff;
-        padding: 8px 16px;
-        border: 1px solid #00aaff;
-        border-radius: 20px; 
-        
-        box-shadow: 0 0 10px rgba(0, 170, 255, 0.2), inset 0 0 5px rgba(0, 170, 255, 0.2);
-        text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
-    }
-
-    .streak-text {
-        background-color: rgba(255, 85, 0, 0.1);
-        color: #ff5500;
-        padding: 8px 16px;
-        border: 1px solid #ff5500;
-        border-radius: 20px;
-
-        text-shadow: 0 0 5px rgba(255, 85, 0, 0.5);
-
-        animation: streak-pulse 1.5s infinite alternate;
-    }
-
-    @@keyframes streak-pulse {
-        0% {
-            box-shadow: 0 0 10px rgba(255, 85, 0, 0.2), inset 0 0 5px rgba(255, 85, 0, 0.2);
-        }
-        100% {
-            box-shadow: 0 0 20px rgba(255, 85, 0, 0.6), inset 0 0 10px rgba(255, 85, 0, 0.4);
-            border-color: #ff7700;
-            color: #ff7700;
-        }
-    }
-    
-    
-    
-    
-
-    .delete-container {
-        display: flex;
-        justify-content: center;
-        margin-top: 30px;
-        margin-bottom: 30px;
-    }
-
-    .delete-btn {
-        background-color: transparent;
-        color: #ff3b3b;
-        border: 2px solid #ff3b3b;
-        border-radius: 8px;
-        padding: 10px 30px;
-        font-size: 16px;
-        font-weight: 900;
-        letter-spacing: 2px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .delete-btn:hover {
-        background-color: rgba(255, 59, 59, 0.1);
-        box-shadow: 0 0 15px rgba(255, 59, 59, 0.4), inset 0 0 10px rgba(255, 59, 59, 0.2);
-    }
-
-    .delete-btn:active {
-        transform: scale(0.95);
-    }
-
-    .edit-btn {
-        text-align: center;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 14px;
-        font-weight: bold;
-        letter-spacing: 2px;
-        margin-top: 10px;
-        cursor: pointer;
-        transition: color 0.2s ease;
-    }
-
-    .edit-btn:hover {
-        color: var(--theme-color);
-    }
-
-    .hardcore-mode-text {
-        color: #bd250a;
-        text-shadow: 0 0 20px rgb(174, 43, 26);
-        animation: hardcore-pulse 3s infinite alternate;
-        text-align: center;
-        font-weight: 900;
-        letter-spacing: 2px;
-        margin-top: 10px;
-    }
-
-    @@keyframes hardcore-pulse {
-        0% { text-shadow: 0 0 10px rgb(174, 43, 26); }
-        100% { text-shadow: 0 0 35px rgb(255, 30, 0); }
-    }
-
-    .edit-mode-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 15px;
-        margin-top: 10px;
-    }
-
-    .save-btn {
-        background-color: #2e2e2e;
-        color: #00ff66;
-        border: 2px solid #00ff66;
-        border-radius: 8px;
-        padding: 8px 15px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .save-btn:hover {
-        background-color: rgba(0, 255, 102, 0.1);
-        box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
-    }
-
-    .cancel-btn {
-        color: rgba(255, 255, 255, 0.5);
-        font-weight: bold;
-        cursor: pointer;
-        transition: color 0.2s ease;
-    }
-
-    .cancel-btn:hover {
-        color: #ffffff;
-    }
-
-    .shop-field {
-        display: flex;
-        padding: 30px;
-        justify-content: space-around;
-        gap: 20px; 
-        border-bottom: 2px solid var(--theme-color);
-    }
-
-    .shop-style {
-        width: 170px; 
-        height: 200px; 
-
-        background: linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%);
-        padding: 15px;
-        border-radius: 12px;
-        color: #ffffff;
-
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: space-between;
-        text-align: center;
-
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease; 
-    }
-
-    .shop-style:hover {
-        transform: translateY(-5px);
-    }
-    
-    .xp-boost-field:hover {
-        box-shadow: 0 8px 25px rgba(0, 255, 102, 0.2);
-        border-color: rgba(0, 255, 102, 0.5);
-    }
-
-    .streak-shield-field:hover {
-        box-shadow: 0 8px 25px rgba(0, 157, 255, 0.2);
-        border-color: rgba(0, 157, 255, 0.5);
-    }
-
-    .shop-item-icon {
-        font-size: 32px;
-        margin-bottom: -5px;
-    }
-
-    .shop-item-title {
-        font-size: 18px;
-        font-weight: 900;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-    }
-
-    .shop-item-desc {
-        font-size: 14px;
-        color: #aaaaaa;
-        line-height: 1.2;
-    }
-    
-    .freeze-streak-amount {
-        font-size: 14px;
-        font-weight: 900;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #95a3c3
-    }
-
-    .buy-btn {
-        width: 100%;
-        padding: 8px;
-        border-radius: 6px;
-        border: none;
-        font-weight: bold;
-        font-size: 14px;
-        cursor: pointer;
-        background: rgba(255, 255, 255, 0.1);
-        color: #fff;
-        transition: all 0.2s ease;
-    }
-
-    .buy-btn:hover {
-        background: #fff;
-        color: #000;
-    }
-
-    .buy-btn:focus {
-        outline: none !important;
-    }
-
-    .buy-btn:disabled {
-        background: rgba(255, 255, 255, 0.02) !important;
-        color: #555555 !important;
-        cursor: not-allowed !important; 
-        box-shadow: none !important;
-        transform: none !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    }
-
-    .shop-style:has(.buy-btn:disabled):hover {
-        transform: none;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .prestige-container {
-        display: flex;
-        padding: 30px;
-        text-align: center;
-        gap: 20px;
-    }
-
-    .prestige-explanation-text {
-        font-size: 16px;
-        font-weight: 700;
-        color: #ffcc00; 
-        text-align: center;
-        letter-spacing: 1.5px;
-        line-height: 1.6;
-        margin: 25px auto;
-        padding: 20px;
-        width: 80%;
-        max-width: 400px;
-
-        background: linear-gradient(180deg, rgba(255, 204, 0, 0.05) 0%, rgba(20, 20, 20, 0.8) 100%);
-        border: 1px solid rgba(255, 204, 0, 0.4);
-        border-radius: 12px;
-
-        text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-        box-shadow: 0 0 20px rgba(255, 204, 0, 0.15), inset 0 0 15px rgba(255, 204, 0, 0.05);
-
-        animation: prestige-breathe 4s infinite alternate ease-in-out;
-    }
-
-    @@keyframes prestige-breathe {
-        0% {
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-            box-shadow: 0 0 20px rgba(255, 204, 0, 0.15), inset 0 0 15px rgba(255, 204, 0, 0.05);
-            border-color: rgba(255, 204, 0, 0.3);
-        }
-        100% {
-            text-shadow: 0 0 15px rgba(255, 204, 0, 0.9);
-            box-shadow: 0 0 30px rgba(255, 204, 0, 0.3), inset 0 0 20px rgba(255, 204, 0, 0.1);
-            border-color: rgba(255, 204, 0, 0.7);
-        }
-    }
-
-    .prestige-btn {
-        margin: 20px auto;
-        padding: 15px 50px;
-        font-size: 24px;
-        font-weight: 900;
-        letter-spacing: 4px;
-        color: #ffffff;
-        background: transparent;
-        border: 3px solid var(--theme-color);
-        border-radius: 8px;
-        cursor: pointer;
-        width: 80%;
-        text-align: center;
-
-        text-shadow: 0 0 10px var(--theme-color);
-        box-shadow: 0 0 10px var(--theme-color), inset 0 0 10px var(--theme-color);
-
-        animation: prestige-border-energy 1.5s infinite alternate ease-in-out;
-        transition: all 0.2s ease;
-    }
-
-
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(5px);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000; 
-    }
-    
-    .modal-box {
-        background-color: #111111;
-        border: 2px solid #ff3333;
-        box-shadow: 0 0 30px rgba(255, 51, 51, 0.3), inset 0 0 15px rgba(255, 51, 51, 0.1);
-        border-radius: 15px;
-        padding: 30px;
-        width: 85%;
-        max-width: 400px;
-        text-align: center;
-    }
-
-    .modal-title {
-        color: #ff3333;
-        font-family: monospace;
-        font-size: 24px;
-        font-weight: 900;
-        letter-spacing: 2px;
-        margin-bottom: 15px;
-        text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
-    }
-
-    .modal-text {
-        color: #cccccc;
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 30px;
-    }
-
-    .modal-actions {
-        display: flex;
-        justify-content: space-between;
-        gap: 15px;
-    }
-
-    .modal-btn {
-        flex: 1;
-        padding: 12px;
-        border-radius: 8px;
-        font-family: monospace;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .cancel-btn {
-        background-color: #222222;
-        border: 1px solid #555555;
-        color: #aaaaaa;
-    }
-    .cancel-btn:active { background-color: #333333; }
-
-    .confirm-btn {
-        background-color: rgba(255, 51, 51, 0.1);
-        border: 1px solid #ff3333;
-        color: #ff3333;
-    }
-    .confirm-btn:active {
-        background-color: #ff3333;
-        color: #111111;
-        box-shadow: 0 0 15px #ff3333;
-    }
-
-    @@keyframes prestige-border-energy {
-        0% {
-            box-shadow: 0 0 5px var(--theme-color), inset 0 0 5px var(--theme-color);
-            border-color: rgba(255, 255, 255, 0.2); 
-        }
-        100% {
-            box-shadow: 0 0 30px var(--theme-color), inset 0 0 15px var(--theme-color);
-            border-color: var(--theme-color); 
-        }
-    }
-
-    .prestige-btn:hover {
-        background: var(--theme-color);
-        color: #111; 
-        text-shadow: none;
-        transform: scale(1.05);
-        box-shadow: 0 0 50px var(--theme-color);
-    }
-
-    .prestige-btn:active {
-        transform: scale(0.95);
-        box-shadow: 0 0 20px var(--theme-color);
-    }
-    
-    .to-cores-page-btn {
-        margin: 20px auto;
-        padding: 15px 30px;
-        font-size: 15px;
-        font-weight: 900;
-        letter-spacing: 4px;
-        color: #ffffff;
-        background: transparent;
-        border: 3px solid var(--theme-color);
-        border-radius: 8px;
-        cursor: pointer;
-        width: 40%;
-        transition: 0.25s ease;
-        text-align: center;
-    }
-    
-    .to-cores-page-btn:hover {
-        text-shadow: 0 0 10px var(--theme-color);
-        box-shadow: 0 0 10px var(--theme-color), inset 0 0 10px var(--theme-color);
-    }
-    
-
-    @@media (max-width: 768px) {
-        .tracker-container { padding: 15px !important; }
-
-        .task-header, .task-content { padding: 15px !important; }
-
-        .level-input-buttons {
-            flex-direction: column !important;
-            align-items: center !important;
-        }
-
-        .xp-input {
-            width: 100% !important;
-            margin-bottom: 10px;
-        }
-
-        .level-up-btn {
-            margin-left: 0 !important;
-            width: 100%;
-            text-align: center;
-        }
-
-        .points-streak {
-            flex-direction: column;
-            text-align: center;
-            gap: 10px;
-        }
-        
-        .streak-text {
-            margin-top: 10px;
-        }
-        
-        .shop-field {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .prestige-btn {
-            padding: 15px 20px !important; 
-            font-size: 18px !important; 
-            letter-spacing: 2px !important;
-            width: 100% !important;
-        }
-        
-        .to-cores-page-btn {
-            padding: 15px 20px !important;
-            font-size: 18px !important;
-            letter-spacing: 2px !important;
-            width: 70% !important;
-        }
-    }
-    
-    
-</style>
