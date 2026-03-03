@@ -48,9 +48,9 @@ public class DopamineTask
     
     public void CheckDailyReset()
     {
-        if (Habit.IsHardcore && Habit.LastMinutesLoggedResetDateTime < DateTime.Today)
+        if (Habit.LastMinutesLoggedResetDateTime < DateTime.Today)
         {
-            if (Habit.MinutesLoggedToday < 60)
+            if (Habit.MinutesLoggedToday < 60 && Habit.IsHardcore)
             {
                 SoftReset();
                 Habit.Streak = 0;
@@ -228,7 +228,6 @@ public class TaskHabit
     public int Streak { get; set; } = 0;
     public double MinutesLoggedToday { get; set; } = 0;
     public string DailyStreakMessage { get; set; } = "";
-    
     public DateTime LastStreakEarnedDateTime { get; set; } = DateTime.Today.AddDays(-1);
     public DateTime LastMinutesLoggedResetDateTime { get; set; } = DateTime.Today;
 }

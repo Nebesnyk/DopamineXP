@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using DopamineXP.Models
 @inject Services.TrackerBrain Brain
+@inject NavigationManager NavManager
 
 <div class="tracker-container">
     <div class="main-scene">
@@ -108,7 +109,11 @@
 
         Brain.SaveToFile();
         
+        NavManager.NavigateTo($"/task/{_name}");
+        
         _name = "";
+        _hexColor = "#000000";
+        _isHardcore = false;
     }
 }
 
